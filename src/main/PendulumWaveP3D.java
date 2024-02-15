@@ -298,9 +298,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
     }
 
     // TODO: cylinder lighting (normal vectors)
-    void cylinder(float bottom, float top, float h, int sides)
-    {
-
+    void cylinder(float bottom, float top, float h, int sides) {
         float angle;
         float[] x = new float[sides+1];
         float[] z = new float[sides+1];
@@ -309,7 +307,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
         float[] z2 = new float[sides+1];
 
         //get the x and z position on a circle for all the sides
-        for(int i=0; i < x.length; i++){
+        for(int i=0; i < x.length; i++) {
             angle = (TWO_PI / sides) * i;
             x[i] = sin(angle) * bottom;
             z[i] = cos(angle) * bottom;
@@ -346,7 +344,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
         normal(0, 1, 0);
         vertex(0,   h,    0);
 
-        for(int i=0; i < x.length; i++){
+        for(int i=0; i < x.length; i++) {
             vertex(x2[i], h, z2[i]);
         }
 

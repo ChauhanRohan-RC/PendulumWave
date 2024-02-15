@@ -9,16 +9,16 @@ import processing.event.KeyEvent;
 import util.U;
 
 import java.awt.*;
-import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public enum Control {
 
     PENDULUM_COUNT("Pendulums",
-            "Number of Pendulums in the Pendulum Wave",
+            "Number of Pendulums in the Pendulum Wave.",
             ui -> String.valueOf(ui.getPendulumWave().pendulumCount()),
             "[Ctr | Shf]-N",
+            "N -> Increase Count  |  Shift-N -> Decrease Count  |  Ctrl-[Shift]-N -> Change count without resetting pendulums state",
             (ui, ev) -> {
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_N) {
                     ui.getPendulumWave().stepPendulumCount(!ev.isShiftDown(), !ev.isControlDown());
@@ -28,10 +28,11 @@ public enum Control {
                 return false;
             }, false),
 
-    PLAY_PAUSE("Pause",
-            "Play/Pause simulation",
+    PLAY_PAUSE("Play/Pause",
+            "Play/Pause simulation.",
             ui -> ui.getPendulumWave().isPaused() ? "Paused" : "Playing",
             "SPACE",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_SPACE && mod == 0) {
@@ -43,16 +44,17 @@ public enum Control {
             }, false),
 
     RESET("Reset",
-            "Resets the Simulation. R -> Reset Pendulums State  |  Ctrl-R -> Reset Pendulum Count  |  Shift-R -> Reset Simulation Environment",
+            "Resets the Simulation.",
             ui -> "",
             "[Ctr | Shf]-R",
+            "R -> Reset Pendulums State  |  Ctrl-R -> Reset Pendulum Count  |  Shift-R -> Reset Simulation Environment   |  Ctrl-Shift-R -> Reset Everything",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_R) {
                     if (mod == 0) {
-                        ui.getPendulumWave().resetPendulums();
+                        ui.getPendulumWave().resetPendulumsState();
                     } else if (ev.isShiftDown()) {
-                        ui.getPendulumWave().resetSimulation(ev.isControlDown());
+                        ui.getPendulumWave().resetSimulation(ev.isControlDown(), ev.isControlDown());
                     } else if (ev.isControlDown()) {
                         ui.getPendulumWave().resetPendulumCount(true);
                     }
@@ -64,9 +66,10 @@ public enum Control {
             }, false),
 
     DRAW_ONLY_BOBS("Bobs Only",
-            "Draw pendulum bobs only (do not draw pendulum chords and support)",
+            "Draw pendulum bobs only (do not draw pendulum chords and support).",
             ui -> ui.isDrawOnlyBobEnabled() ? "ON" : "OFF",
             "B",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_B && mod == 0) {
@@ -78,9 +81,10 @@ public enum Control {
             }, false),
 
     HUD_ENABLED("HUD",
-            "Show/Hide HUD",
+            "Show/Hide HUD.",
             ui -> ui.isHudEnabled() ? "ON" : "OFF",
             "H",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_H && mod == 0) {
@@ -92,9 +96,10 @@ public enum Control {
             }, false, true, null),
 
     SHOW_KEY_BINDINGS("Controls",
-            "Show/Hide Control Key Bindings",
+            "Show/Hide Control Key Bindings.",
             ui -> ui.areKeyBindingsShown() ? "ON" : "OFF",
             "C",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_C && mod == 0) {
@@ -107,9 +112,10 @@ public enum Control {
 
 
     SOUND("Sound",
-            "Toggle Sounds",
+            "Toggle Sounds.",
             ui -> ui.isSoundEnabled() ? "ON" : "OFF",
             "S",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_S && mod == 0) {
@@ -121,9 +127,10 @@ public enum Control {
             }, false),
 
     POLY_RHYTHM("Poly Rhythm",
-            "Toggle Poly Rhythm (play multiple notes at once)",
+            "Toggle Poly Rhythm (play multiple notes at once).",
             ui -> ui.isPolyRhythmEnabled() ? "ON" : "OFF",
             "Shf-S",
+            "",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_S && mod == Event.SHIFT /* Shift only */) {
@@ -135,11 +142,12 @@ public enum Control {
             }, false),
 
     SIMULATION_SPEED("Sim Speed",
-            "Simulation Speed, in both multiples and percentage",
+            "Simulation Speed, in both multiples and percentage.",
             ui -> String.format("%sx (%s%%)",
                     U.nf001(ui.getPendulumWave().getSpeed()),
                     U.nf001(ui.getPendulumWave().getSpeedPercent())),
             "[Shf]-/",
+            "/ -> Increase Speed  |  Shift-/ -> Decrease Speed",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_SLASH && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -151,9 +159,10 @@ public enum Control {
             }, true),
 
     GRAVITY("Gravity",
-            "Acceleration due to Gravity (in ms-2)",
+            "Acceleration due to Gravity (in ms-2).",
             ui -> U.nf002(ui.getPendulumWave().gravity()) + " ms-2",
             "[Shf]-G",
+            "G -> Increase Gravity  |  Shift-G -> Decrease Gravity",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_G && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -165,9 +174,10 @@ public enum Control {
             }, true),
 
     DRAG("Drag",
-            "Drag Coefficient (in g/s). Positive -> drag, Negative -> push",
+            "Drag Coefficient (in g/s), Positive value corresponds to drag, negative to push.",
             ui -> U.nf002(ui.getPendulumWave().drag() * 1000) + " g/s",
             "[Shf]-D",
+            "D -> Increase Drag  |  Shift-D -> Decrease Drag",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_D && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -179,9 +189,10 @@ public enum Control {
             }, true),
 
     PENDULUM_MASS("Mass",
-            "Mass of each pendulum Bob (in grams)",
+            "Mass of each pendulum Bob (in grams).",
             ui -> U.nf002(ui.getPendulumWave().getPendulumMass() * 1000) + " g",
             "[Shf]-M",
+            "M -> Increase Mass  |  Shift-M -> Decrease Mass",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_M && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -193,9 +204,10 @@ public enum Control {
             }, true),
 
     PENDULUM_START_ANGLE("Start Angle",
-            "Start angle for each pendulum (in degrees)",
-            ui -> U.nf001(PApplet.degrees(ui.getPendulumWave().getPendulumStartAngle())) + "°",
+            "Start angle for each pendulum (in degrees).",
+            ui -> U.nf001(U.normalizeDegrees(PApplet.degrees(ui.getPendulumWave().getPendulumStartAngle()))) + "°",
             "[Shf]-A",
+            "A -> Increase Start Angle  |  Shift-A -> Decrease Start Angle",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_A && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -207,13 +219,14 @@ public enum Control {
             }, true),
 
     WAVE_PERIOD("Wave Period",
-            "Total time in which the Pendulum Wave completes one cycle (in secs)",
+            "Total time in which the Pendulum Wave completes one cycle (in secs).",
             ui -> U.nf001(ui.getPendulumWave().getEffectiveWavePeriod()) + " s",
             "[Shf]-P",
+            "P -> Increase Wave Period  |  Shift-P -> Decrease Wave Period",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_P && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
-                    ui.getPendulumWave().stepInternalWavePeriod(mod == 0, false);
+                    ui.getPendulumWave().stepEffectiveWavePeriod(mod == 0, false);
                     return true;
                 }
 
@@ -221,9 +234,10 @@ public enum Control {
             }, true),
 
     MIN_OSCILLATIONS_IN_WAVE_PERIOD("Min Osc",
-            "Number of oscillations the first pendulum completes in Wave Period time",
+            "Number of oscillations the first pendulum completes in Wave Period time.",
             ui -> U.nf001(ui.getPendulumWave().getMinOscillationsInWavePeriod()),
             "[Shf]-O",
+            "O -> Increase Min Osc  |  Shift-O -> Decrease Min Osc",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_O && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -235,9 +249,10 @@ public enum Control {
             }, true),
 
     OSCILLATION_STEP_PER_PENDULUM("Osc Step",
-            "Number of oscillations that a pendulum completes more than its predecessor",
+            "Number of oscillations that a pendulum completes more than its predecessor.",
             ui -> U.nf001(ui.getPendulumWave().getOscillationsStepPerPendulum()),
             "[Shf]-I",
+            "I -> Increase Osc Step  |  Shift-I -> Decrease Osc Step",
             (ui, ev) -> {
                 final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_I && (mod == 0 || mod == Event.SHIFT) /* Only shift allowed */) {
@@ -251,60 +266,57 @@ public enum Control {
 
     /* Camera Controls */
 
-    CAMERA_ROTATE_X("Pitch (X)",
-            "Controls the Camera PITCH (X-Axis rotation)",
+    CAMERA_ROTATE_X("Pitch-X",
+            "Controls the Camera PITCH (rotation about X-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[0]))) + "°": "";
+                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[0]))) + "°": "N/A";
             },
-            "^",
+            "Up/Down",
+            "[UP | DOWN] arrow keys",
             (ui, ev) -> {
-                final PeasyCam cam = ui.getCamera();
                 final int mod = ev.getModifiers();
                 final int kc = ev.getKeyCode();
-                if (cam != null && (kc == java.awt.event.KeyEvent.VK_UP || kc == java.awt.event.KeyEvent.VK_DOWN) && mod == 0) {
-                    final float rx = ((kc == java.awt.event.KeyEvent.VK_UP)? 1: -1) * PApplet.HALF_PI;
-                    U.rotateX(cam, rx, GLConfig.CAMERA_ROTATIONS_ANIMATION_MILLS);
+                if (ui.cameraSupported() && (kc == java.awt.event.KeyEvent.VK_UP || kc == java.awt.event.KeyEvent.VK_DOWN) && (mod == 0 || mod == Event.CTRL)) {
+                    ui.rotateCameraXByUnit(kc == java.awt.event.KeyEvent.VK_UP, mod == 0);
                     return true;
                 }
 
                 return false;
             }, false, false, GLConfig.COLOR_X_AXIS),
 
-    CAMERA_ROTATE_Y("Yaw (Y)",
-            "Controls the Camera YAW (Y-Axis rotation)",
+    CAMERA_ROTATE_Y("Yaw-Y",
+            "Controls the Camera YAW (rotation about Y-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[1]))) + "°": "";
+                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[1]))) + "°": "N/A";
             },
-            "< >",
+            "Left/Right",
+            "[LEFT | RIGHT] arrow keys",
             (ui, ev) -> {
-                final PeasyCam cam = ui.getCamera();
                 final int mod = ev.getModifiers();
                 final int kc = ev.getKeyCode();
-                if (cam != null && (kc == java.awt.event.KeyEvent.VK_LEFT || kc == java.awt.event.KeyEvent.VK_RIGHT) && mod == 0) {
-                    final float ry = ((kc == java.awt.event.KeyEvent.VK_LEFT)? 1: -1) * PApplet.HALF_PI;
-                    U.rotateY(cam, ry, GLConfig.CAMERA_ROTATIONS_ANIMATION_MILLS);
+                if (ui.cameraSupported() && (kc == java.awt.event.KeyEvent.VK_LEFT || kc == java.awt.event.KeyEvent.VK_RIGHT) && (mod == 0 || mod == Event.CTRL)) {
+                    ui.rotateCameraYByUnit(kc == java.awt.event.KeyEvent.VK_LEFT, mod == 0);
                     return true;
                 }
 
                 return false;
             }, false, false, GLConfig.COLOR_Y_AXIS),
 
-    CAMERA_ROTATE_Z("Roll (Z)",
-            "Controls the Camera ROLL (Z-Axis rotation)",
+    CAMERA_ROTATE_Z("Roll-Z",
+            "Controls the Camera ROLL (rotation about Z-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[2]))) + "°": "";
+                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[2]))) + "°": "N/A";
             },
-            "Shf ^",
+            "Shf-Up/Down",
+            "Shift-[LEFT | RIGHT] arrow keys",
             (ui, ev) -> {
-                final PeasyCam cam = ui.getCamera();
-                final int mod = ev.getModifiers();
+//                final int mod = ev.getModifiers();
                 final int kc = ev.getKeyCode();
-                if (cam != null && (kc == java.awt.event.KeyEvent.VK_LEFT || kc == java.awt.event.KeyEvent.VK_RIGHT) && mod == Event.SHIFT /* With Shift */) {
-                    final float rz = ((kc == java.awt.event.KeyEvent.VK_LEFT)? 1: -1) * PApplet.HALF_PI;
-                    U.rotateZ(cam, rz, GLConfig.CAMERA_ROTATIONS_ANIMATION_MILLS);
+                if (ui.cameraSupported() && (kc == java.awt.event.KeyEvent.VK_LEFT || kc == java.awt.event.KeyEvent.VK_RIGHT) && ev.isShiftDown() /* With Shift */) {
+                    ui.rotateCameraZByUnit(kc == java.awt.event.KeyEvent.VK_LEFT, !ev.isControlDown());
                     return true;
                 }
 
@@ -320,7 +332,9 @@ public enum Control {
     @NotNull
     private final Function<BasePendulumWavePUi, String> valueProvider;
     @NotNull
-    public final String keyEventLabel;
+    public final String keyBindingLabel;
+    @NotNull
+    public final String keyBindingDescription;
     @NotNull
     private final BiFunction<BasePendulumWavePUi, KeyEvent, Boolean> keyEventHandler;
 
@@ -337,7 +351,8 @@ public enum Control {
     Control(@NotNull String label,
             @NotNull String description,
             @NotNull Function<BasePendulumWavePUi, String> valueProvider,
-            @NotNull String keyEventLabel,
+            @NotNull String keyBindingLabel,
+            @NotNull String keyBindingDescription,
             @NotNull BiFunction<BasePendulumWavePUi, KeyEvent, Boolean> keyEventHandler,
             boolean continuousKeyEvent,
             boolean alwaysShowKeyBinding,
@@ -346,7 +361,8 @@ public enum Control {
         this.label = label;
         this.description = description;
         this.valueProvider = valueProvider;
-        this.keyEventLabel = keyEventLabel;
+        this.keyBindingLabel = keyBindingLabel;
+        this.keyBindingDescription = keyBindingDescription;
         this.keyEventHandler = keyEventHandler;
         this.continuousKeyEvent = continuousKeyEvent;
         this.alwaysShowKeyBinding = alwaysShowKeyBinding;
@@ -356,10 +372,11 @@ public enum Control {
     Control(@NotNull String label,
             @NotNull String description,
             @NotNull Function<BasePendulumWavePUi, String> valueProvider,
-            @NotNull String keyEventLabel,
+            @NotNull String keyBindingLabel,
+            @NotNull String keyBindingDescription,
             @NotNull BiFunction<BasePendulumWavePUi, KeyEvent, Boolean> keyEventHandler,
             boolean continuousKeyEvent) {
-        this(label, description, valueProvider, keyEventLabel, keyEventHandler, continuousKeyEvent, false, null);
+        this(label, description, valueProvider, keyBindingLabel, keyBindingDescription, keyEventHandler, continuousKeyEvent, false, null);
     }
 
 
@@ -367,7 +384,7 @@ public enum Control {
      * @return current formatted value
      */
     @NotNull
-    public String getValue(@NotNull BasePendulumWavePUi baseUi) {
+    public String getFormattedValue(@NotNull BasePendulumWavePUi baseUi) {
         return valueProvider.apply(baseUi);
     }
 
@@ -449,18 +466,41 @@ public enum Control {
         final Control[] controls = getValuesShared();
 
         final StringBuilder sj = new StringBuilder();
-        boolean first = true;
+        boolean firstControl = true;
 
         for (Control c: controls) {
-            if (first) {
-                first = false;
+            if (firstControl) {
+                firstControl = false;
             } else {
                 sj.append("\n\n");      // Delimiter
             }
 
-            sj.append(" -> ").append(c.label).append(" : ").append(c.keyEventLabel)
-                    .append("   (").append(c.continuousKeyEvent? "Continuous": "Discrete").append(')')
-                    .append("\n\t ").append(c.description);
+            sj.append("-> ").append(c.keyBindingLabel).append(" : ").append(c.label)
+                    .append("  [").append(c.continuousKeyEvent? "Continuous": "Discrete").append(']');
+
+            // Descriptions
+            for (String line: c.description.split("\n")) {
+                if (line == null || line.isEmpty())
+                    continue;
+
+                sj.append("\n\t").append(line);
+            }
+
+            boolean firstKeyBind = true;
+            // Key bindings Description
+            for (String line: c.keyBindingDescription.split("\n")) {
+                if (line == null || line.isEmpty())
+                    continue;
+
+                if (firstKeyBind) {
+                    sj.append("\n\t<Keys> : ");
+                    firstKeyBind = false;
+                } else {
+                    sj.append("\n\t              ");
+                }
+
+                sj.append(line);
+            }
         }
 
         return sj.toString();

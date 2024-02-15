@@ -1,6 +1,7 @@
 package util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import peasy.CameraState;
 import peasy.PeasyCam;
 import peasy.org.apache.commons.math.geometry.Rotation;
@@ -9,6 +10,8 @@ import peasy.org.apache.commons.math.geometry.Vector3D;
 
 import java.awt.*;
 import java.text.NumberFormat;
+import java.util.Collection;
+import java.util.function.Function;
 
 public class U {
 
@@ -30,6 +33,10 @@ public class U {
 
         SCREEN_RESOLUTION_NATIVE = new Dimension(displayMode.getWidth(), displayMode.getHeight());
         SCREEN_RESOLUTION_SCALED = Toolkit.getDefaultToolkit().getScreenSize();
+    }
+
+    public static boolean isEmpty(@Nullable CharSequence seq) {
+        return seq == null || seq.isEmpty();
     }
 
     public static <T extends Enum<T>> T cycleEnum(@NotNull Class<T> clazz, int curOrdinal) {
@@ -217,43 +224,83 @@ public class U {
 
 
 
+    @Nullable
+    public static Runnable chainRunnables(@Nullable Collection<? extends Runnable> tasks) {
+        if (tasks == null || tasks.isEmpty())
+            return null;
+
+        Runnable merged = null;
+        for (Runnable task: tasks) {
+            if (merged == null) {
+                merged = task;
+            } else {
+                final Runnable old = merged;
+                merged = () -> { old.run(); task.run(); };
+            }
+        }
+
+        return merged;
+    }
+
+
     /* Peasy Camera Hacks ........................................................................................  */
 
-    public static CameraState createNewPeasyCamState(@NotNull PeasyCam cam, float delRotationX, float delRotationY, float delRotationZ, float delCenterX, float delCenterY, float delCenterZ, float delDistance) {
-        final float[] rotations = cam.getRotations();
-        final float[] lookAt = cam.getLookAt();
+    @NotNull
+    public static CameraState transformPeasyCamState(@NotNull PeasyCam cam, @NotNull Function<float[], float[]> rotationTransform, @NotNull Function<float[], float[]> lookAtTransform, @NotNull Function<Double, Double> distanceProvider) {
+        final float[] newRotations = rotationTransform.apply(cam.getRotations());
+        final float[] newLookAt = lookAtTransform.apply(cam.getLookAt());
+        final double newDistance = distanceProvider.apply(cam.getDistance());
 
-        return new CameraState(new Rotation(RotationOrder.XYZ, rotations[0] + delRotationX, rotations[1] + delRotationY, rotations[2] + delRotationZ),
-                new Vector3D(lookAt[0] + delCenterX, lookAt[1] + delCenterY, lookAt[2] + delCenterZ),
-                cam.getDistance() + delDistance
+        return new CameraState(new Rotation(RotationOrder.XYZ, newRotations[0], newRotations[1], newRotations[2]),
+                new Vector3D(newLookAt[0], newLookAt[1], newLookAt[2]),
+                newDistance
         );
     }
 
-    public static CameraState createNewPeasyCamState(@NotNull PeasyCam cam, float delRotationX, float delRotationY, float delRotationZ) {
-        return createNewPeasyCamState(cam, delRotationX, delRotationY, delRotationZ, 0, 0, 0, 0);
+    @NotNull
+    public static CameraState changePeasyCamStateBy(@NotNull PeasyCam cam, float delRotationX, float delRotationY, float delRotationZ, float delLookAtX, float delLookAtY, float delLookAtZ, float delDistance) {
+        return transformPeasyCamState(cam, rot -> new float[] { rot[0] + delRotationX, rot[1] + delRotationY, rot[2] + delRotationZ }, la -> new float[] { la[0] + delLookAtX, la[1] + delLookAtY, la[2] + delLookAtZ }, dis -> dis + delDistance);
+    }
+
+    @NotNull
+    public static CameraState changePeasyCamStateBy(@NotNull PeasyCam cam, float delRotationX, float delRotationY, float delRotationZ) {
+        return changePeasyCamStateBy(cam, delRotationX, delRotationY, delRotationZ, 0, 0, 0, 0);
     }
 
     // Pitch
-    public static void rotateX(@NotNull PeasyCam cam, float delRotationX, long animationMs) {
+    public static void rotateXTo(@NotNull PeasyCam cam, float rotationX, long animationMs) {
+        cam.setState(transformPeasyCamState(cam, rot -> new float[] { rotationX, rot[1], rot[2] }, la -> la, dis -> dis), animationMs);
+    }
+
+    public static void rotateXBy(@NotNull PeasyCam cam, float delRotationX, long animationMs) {
         if (animationMs > 0) {
-            cam.setState(createNewPeasyCamState(cam, delRotationX, 0, 0), animationMs);
+            cam.setState(changePeasyCamStateBy(cam, delRotationX, 0, 0), animationMs);
         } else {
             cam.rotateX(delRotationX);
         }
     }
 
     // Yaw
-    public static void rotateY(@NotNull PeasyCam cam, float delRotationY, long animationMs) {
+    public static void rotateYTo(@NotNull PeasyCam cam, float rotationY, long animationMs) {
+        cam.setState(transformPeasyCamState(cam, rot -> new float[] { rot[0], rotationY, rot[2] }, la -> la, dis -> dis), animationMs);
+    }
+
+    public static void rotateYBy(@NotNull PeasyCam cam, float delRotationY, long animationMs) {
         if (animationMs > 0) {
-            cam.setState(createNewPeasyCamState(cam, 0, delRotationY, 0), animationMs);
+            cam.setState(changePeasyCamStateBy(cam, 0, delRotationY, 0), animationMs);
         } else {
             cam.rotateY(delRotationY);
         }
     }
 
-    public static void rotateZ(@NotNull PeasyCam cam, float delRotationZ, long animationMs) {
+    // Roll
+    public static void rotateZTo(@NotNull PeasyCam cam, float rotationZ, long animationMs) {
+        cam.setState(transformPeasyCamState(cam, rot -> new float[] { rot[0], rot[1], rotationZ }, la -> la, dis -> dis), animationMs);
+    }
+
+    public static void rotateZBy(@NotNull PeasyCam cam, float delRotationZ, long animationMs) {
         if (animationMs > 0) {
-            cam.setState(createNewPeasyCamState(cam, 0, 0, delRotationZ), animationMs);
+            cam.setState(changePeasyCamStateBy(cam, 0, 0, delRotationZ), animationMs);
         } else {
             cam.rotateZ(delRotationZ);
         }

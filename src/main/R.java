@@ -25,6 +25,32 @@ public class R {
     public static final Path FONT_PD_SANS_REGULAR = DIR_FONT.resolve("product_sans_regular.ttf");
     public static final Path FONT_PD_SANS_MEDIUM = DIR_FONT.resolve("product_sans_medium.ttf");
 
+    // Shell
+
+    private static final String SHELL_ROOT_NS = "wave";       // Name Space
+
+    @NotNull
+    public static String shellPath(@Nullable String child) {
+        return ((child == null || child.isEmpty())? SHELL_ROOT_NS: SHELL_ROOT_NS + "\\" + child) + "> ";
+    }
+
+    public static final String SHELL_ROOT = shellPath(null);
+    public static final String SHELL_PENDULUM_COUNT = shellPath("count");
+    public static final String SHELL_RESET = shellPath("reset");
+    public static final String SHELL_SPEED = shellPath("speed");
+    public static final String SHELL_GRAVITY = shellPath("gravity");
+    public static final String SHELL_DRAG = shellPath("drag");
+    public static final String SHELL_MASS = shellPath("mass");
+    public static final String SHELL_ANGLE = shellPath("angle");
+    public static final String SHELL_WAVE_PERIOD = shellPath("wp");
+    public static final String SHELL_MIN_OSC = shellPath("min-osc");
+    public static final String SHELL_OSC_STEP = shellPath("osc-step");
+
+    public static final String SHELL_CAMERA = shellPath("cam");
+    public static final String SHELL_ROTATION_X = shellPath("pitch");
+    public static final String SHELL_ROTATION_Y = shellPath("yaw");
+    public static final String SHELL_ROTATION_Z = shellPath("roll");
+
     /* ...................................  Utility functions  ................................ */
 
     @NotNull

@@ -3,8 +3,6 @@ package pendulum;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import processing.core.PApplet;
-import processing.core.PConstants;
-import processing.core.PVector;
 import util.Point3DF;
 
 import java.awt.*;
@@ -163,7 +161,7 @@ public class Pendulum {
         return this;
     }
 
-    public Pendulum reset() {
+    public Pendulum resetState() {
         mStarted = false;
         angVel = startAngVel;
         setAngleInternal(startAngle);

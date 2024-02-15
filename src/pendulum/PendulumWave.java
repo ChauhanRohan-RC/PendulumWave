@@ -35,6 +35,40 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
     }
 
+
+
+    /**
+     * Effective Wave Period is the actual time in which a pendulum wave completes one cycle i.e. all pendulums come in sync. This depends inversely on the {@link #oscillationsStepPerPendulum oscillation_step} per pendulum. Thus, it may be different from the {@link #internalWavePeriod internal_wave_period} which is only defined for {@link #oscillationsStepPerPendulum oscillation_step} = 1.
+     * <br><br>
+     * <strong>
+     *     Effective Wave Period = Internal Wave Period / Oscillation Step
+     * </strong>
+     *
+     * @param internalWavePeriod internal wave period, defined only when oscillation_step_per_pendulum = 1
+     * @param oscillationsStepPerPendulum oscillation_step per pendulum
+     * @return The Effective Wave Period = internal_wave_period / oscillation_step
+     * **/
+    public static float effectiveWavePeriod(float internalWavePeriod, float oscillationsStepPerPendulum) {
+        return oscillationsStepPerPendulum != 0? internalWavePeriod / Math.abs(oscillationsStepPerPendulum): 0;
+    }
+
+    /**
+     * Internal Wave Period is the time in which a pendulum wave would have completed one cycle (i.e. all pendulums come in sync) if the {@link #oscillationsStepPerPendulum oscillation_step_per_pendulum} = 1.
+     * <br><br>
+     * <strong>
+     *     Internal Wave Period = Effective Wave Period * Oscillation Step
+     * </strong>
+     *
+     * @param effectiveWavePeriod The effective wave period
+     * @param oscillationsStepPerPendulum oscillation_step per pendulum
+     * @return The Internal Wave Period = effective_wave_period * oscillation_step
+     * **/
+    public static float internalWavePeriod(float effectiveWavePeriod, float oscillationsStepPerPendulum) {
+        return effectiveWavePeriod * Math.abs(oscillationsStepPerPendulum);
+    }
+
+
+
     public static final int DEFAULT_INITIAL_PENDULUM_COUNT = 10;
     private static final int DEFAULT_PENDULUM_COUNT__STEP = 1;
 
@@ -44,14 +78,17 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
     public static final float DEFAULT_START_ANGLE = (float) Math.toRadians(30);        // Start angle of each pendulum (in radians)
     private static final float DEFAULT_START_ANGLE__STEP = (float) Math.toRadians(0.2);        // unit change (in radians)
 
-    public static final float DEFAULT_WAVE_PERIOD_SECS = 30f;             // total time (in s) for the entire wave to complete one cycle, ex 60s
-    private static final float DEFAULT_WAVE_PERIOD_SECS__STEP = 0.02f;       // unit step (in s)
+    public static final float DEFAULT_INTERNAL_WAVE_PERIOD_SECS = 30f;             // total time (in s) for the entire wave to complete one cycle, ex 60s
+    private static final float DEFAULT_INTERNAL_WAVE_PERIOD_SECS__STEP = 0.02f;       // unit step (in s)
 
     public static final float DEFAULT_OSCILLATIONS_MIN = 4f;                //  number of oscillations of the first pendulum in wave period time
     private static final float DEFAULT_OSCILLATIONS_MIN__STEP = 0.05f;       //  unit change
 
     public static final float DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM = 0.2f;       // number of oscillations that a certain pendulum completes more that the previous pendulum i.e = num_oscillation(i + 1) - num_oscillation(i)
     private static final float DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM__STEP = 0.01f;       // unit change
+
+    public static final float DEFAULT_EFFECTIVE_WAVE_PERIOD_SECS = effectiveWavePeriod(DEFAULT_INTERNAL_WAVE_PERIOD_SECS, DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM);
+    private static final float DEFAULT_EFFECTIVE_WAVE_PERIOD_SECS__STEP = DEFAULT_INTERNAL_WAVE_PERIOD_SECS__STEP;       // unit step (in s)
 
     public static final float DEFAULT_GRAVITY = 9.8f;               // Acceleration due to gravity, in ms-2
     private static final float DEFAULT_GRAVITY__STEP = 0.002f;               // discrete step in gravity, in ms-2
@@ -78,7 +115,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
     /**
      * Total time (in s) for the entire wave to complete one cycle, ex 60s
      * */
-    private float internalWavePeriod = DEFAULT_WAVE_PERIOD_SECS;
+    private float internalWavePeriod = DEFAULT_INTERNAL_WAVE_PERIOD_SECS;
 
     /**
      * number of oscillations of the first pendulum in {@link #internalWavePeriod wave period} time
@@ -279,11 +316,11 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
     }
 
 
-    private void onPendulumMassChanged(float prev, float mass, boolean reset) {
+    private void onPendulumMassChanged(float prev, float mass, boolean resetPendulumsState) {
         updatePendulumsMass();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -291,7 +328,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return pendulumMass;
     }
 
-    public PendulumWave setPendulumMass(float pendulumMass, boolean reset) {
+    public PendulumWave setPendulumMass(float pendulumMass, boolean resetPendulumsState) {
         if (pendulumMass <= 0) {
             throw new IllegalArgumentException("Pendulum mass should be > 0, given: " + pendulumMass);
         }
@@ -301,24 +338,24 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
         final float prev = this.pendulumMass;
         this.pendulumMass = pendulumMass;
-        onPendulumMassChanged(prev, pendulumMass, reset);
+        onPendulumMassChanged(prev, pendulumMass, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepPendulumMass(boolean inc, boolean reset) {
+    public PendulumWave stepPendulumMass(boolean inc, boolean resetPendulumsState) {
         float _new = getPendulumMass() + (inc? 1: -1) * DEFAULT_PENDULUM_MASS__STEP;
         if (_new > 0)
-            setPendulumMass(_new, reset);
+            setPendulumMass(_new, resetPendulumsState);
 
         return this;
     }
 
 
-    private void onPendulumStartAngleChanged(float prev, float startAngle, boolean reset) {
+    private void onPendulumStartAngleChanged(float prev, float startAngle, boolean resetPendulumsState) {
         updatePendulumsStartAngle();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -326,7 +363,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return pendulumStartAngle;
     }
 
-    public PendulumWave setPendulumStartAngle(float pendulumStartAngle, boolean reset) {
+    public PendulumWave setPendulumStartAngle(float pendulumStartAngle, boolean resetPendulumsState) {
         pendulumStartAngle %= (float) (Math.PI * 2);
 
         if (this.pendulumStartAngle == pendulumStartAngle)
@@ -334,20 +371,20 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
         final float prev = this.pendulumStartAngle;
         this.pendulumStartAngle = pendulumStartAngle;
-        onPendulumStartAngleChanged(prev, pendulumStartAngle, reset);
+        onPendulumStartAngleChanged(prev, pendulumStartAngle, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepPendulumStartAngle(boolean inc, boolean reset) {
-        return setPendulumStartAngle(getPendulumStartAngle() + (inc? 1: -1) * DEFAULT_START_ANGLE__STEP, reset);
+    public PendulumWave stepPendulumStartAngle(boolean inc, boolean resetPendulumsState) {
+        return setPendulumStartAngle(getPendulumStartAngle() + (inc? 1: -1) * DEFAULT_START_ANGLE__STEP, resetPendulumsState);
     }
 
 
-    private void onGravityChanged(float prev, float gravity, boolean reset) {
+    private void onGravityChanged(float prev, float gravity, boolean resetPendulumsState) {
         updatePendulumsLength();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -356,23 +393,23 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return gravity;
     }
 
-    public PendulumWave setGravity(float gravity, boolean reset) {
+    public PendulumWave setGravity(float gravity, boolean resetPendulumsState) {
         if (this.gravity == gravity)
             return this;
 
         final float prev = this.gravity;
         this.gravity = gravity;
-        onGravityChanged(prev, gravity, reset);
+        onGravityChanged(prev, gravity, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepGravity(boolean inc, boolean reset) {
-        return setGravity(gravity() + (inc? 1: -1) * DEFAULT_GRAVITY__STEP, reset);
+    public PendulumWave stepGravity(boolean inc, boolean resetPendulumsState) {
+        return setGravity(gravity() + (inc? 1: -1) * DEFAULT_GRAVITY__STEP, resetPendulumsState);
     }
 
-    private void onDragChanged(float prev, float drag, boolean reset) {
-        if (reset) {
-            resetPendulums();
+    private void onDragChanged(float prev, float drag, boolean resetPendulumsState) {
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -381,26 +418,26 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return drag;
     }
 
-    public PendulumWave setDrag(float drag, boolean reset) {
+    public PendulumWave setDrag(float drag, boolean resetPendulumsState) {
         if (this.drag == drag)
             return this;
 
         final float prev = this.drag;
         this.drag = drag;
-        onDragChanged(prev, drag, reset);
+        onDragChanged(prev, drag, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepDrag(boolean inc, boolean reset) {
-        return setDrag(drag() + (inc? 1: -1) * DEFAULT_DRAG__STEP, reset);
+    public PendulumWave stepDrag(boolean inc, boolean resetPendulumsState) {
+        return setDrag(drag() + (inc? 1: -1) * DEFAULT_DRAG__STEP, resetPendulumsState);
     }
 
 
-    private void onInternalWavePeriodChanged(float prev, float wavePeriod, boolean reset) {
+    private void onInternalWavePeriodChanged(float prev, float wavePeriod, boolean resetPendulumsState) {
         updatePendulumsLength();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -417,11 +454,11 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
      * Sets the internal Wave Period, which is defined when {@link #oscillationsStepPerPendulum oscillation_step} = 1.
      *
      * @param internalWavePeriod Wave Period (in s), corresponding to {@link #oscillationsStepPerPendulum oscillation_step} = 1
-     * @param reset true to reset all pendulums
+     * @param resetPendulumsState true to reset all pendulums
      *
      * @see #getEffectiveWavePeriod()
      * */
-    public PendulumWave setInternalWavePeriod(float internalWavePeriod, boolean reset) {
+    public PendulumWave setInternalWavePeriod(float internalWavePeriod, boolean resetPendulumsState) {
         if (internalWavePeriod <= 0) {
             throw new IllegalArgumentException("Internal Wave period must be > 0, given: " + internalWavePeriod);
         }
@@ -431,14 +468,14 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
         final float prev = this.internalWavePeriod;
         this.internalWavePeriod = internalWavePeriod;
-        onInternalWavePeriodChanged(prev, internalWavePeriod, reset);
+        onInternalWavePeriodChanged(prev, internalWavePeriod, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepInternalWavePeriod(boolean inc, boolean reset) {
-        final float _new = getInternalWavePeriod() + (inc? 1: -1) * DEFAULT_WAVE_PERIOD_SECS__STEP;
+    public PendulumWave stepInternalWavePeriod(boolean inc, boolean resetPendulumsState) {
+        final float _new = getInternalWavePeriod() + (inc? 1: -1) * DEFAULT_INTERNAL_WAVE_PERIOD_SECS__STEP;
         if (_new > 0) {
-            setInternalWavePeriod(_new, reset);
+            setInternalWavePeriod(_new, resetPendulumsState);
         }
 
         return this;
@@ -446,11 +483,11 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
 
 
-    private void onMinOscillationsInWavePeriodChanged(float prev, float minOscillationsInWavePeriod, boolean reset) {
+    private void onMinOscillationsInWavePeriodChanged(float prev, float minOscillationsInWavePeriod, boolean resetPendulumsState) {
         updatePendulumsLength();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -458,7 +495,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return minOscillationsInWavePeriod;
     }
 
-    public PendulumWave setMinOscillationsInWavePeriod(float minOscillationsInWavePeriod, boolean reset) {
+    public PendulumWave setMinOscillationsInWavePeriod(float minOscillationsInWavePeriod, boolean resetPendulumsState) {
         if (minOscillationsInWavePeriod <= 0) {
             throw new IllegalArgumentException("Minimum Oscillation In Wave Period must be > 0, given: " + minOscillationsInWavePeriod);
         }
@@ -468,14 +505,14 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
         final float prev = this.minOscillationsInWavePeriod;
         this.minOscillationsInWavePeriod = minOscillationsInWavePeriod;
-        onMinOscillationsInWavePeriodChanged(prev, minOscillationsInWavePeriod, reset);
+        onMinOscillationsInWavePeriodChanged(prev, minOscillationsInWavePeriod, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepMinOscillationsInWavePeriod(boolean inc, boolean reset) {
+    public PendulumWave stepMinOscillationsInWavePeriod(boolean inc, boolean resetPendulumsState) {
         final float _new = getMinOscillationsInWavePeriod() + (inc? 1: -1) * DEFAULT_OSCILLATIONS_MIN__STEP;
         if (_new > 0) {
-            setMinOscillationsInWavePeriod(_new, reset);
+            setMinOscillationsInWavePeriod(_new, resetPendulumsState);
         }
 
         return this;
@@ -483,11 +520,11 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
 
 
-    private void onOscillationsStepPerPendulumChanged(float prev, float oscillationsStepPerPendulum, boolean reset) {
+    private void onOscillationsStepPerPendulumChanged(float prev, float oscillationsStepPerPendulum, boolean resetPendulumsState) {
         updatePendulumsLength();
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
@@ -495,9 +532,9 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return oscillationsStepPerPendulum;
     }
 
-    public PendulumWave setOscillationsStepPerPendulum(float oscillationsStepPerPendulum, boolean reset) {
-        if (oscillationsStepPerPendulum < 0) {
-            throw new IllegalArgumentException("Oscillation step per pendulum must be >= 0, given: " + oscillationsStepPerPendulum);
+    public PendulumWave setOscillationsStepPerPendulum(float oscillationsStepPerPendulum, boolean resetPendulumsState) {
+        if (oscillationsStepPerPendulum <= 0) {
+            throw new IllegalArgumentException("Oscillation step per pendulum must be > 0, given: " + oscillationsStepPerPendulum);
         }
 
         if (this.oscillationsStepPerPendulum == oscillationsStepPerPendulum)
@@ -505,18 +542,20 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 
         final float prev = this.oscillationsStepPerPendulum;
         this.oscillationsStepPerPendulum = oscillationsStepPerPendulum;
-        onOscillationsStepPerPendulumChanged(prev, oscillationsStepPerPendulum, reset);
+        onOscillationsStepPerPendulumChanged(prev, oscillationsStepPerPendulum, resetPendulumsState);
         return this;
     }
 
-    public PendulumWave stepOscillationsStepPerPendulum(boolean inc, boolean reset) {
+    public PendulumWave stepOscillationsStepPerPendulum(boolean inc, boolean resetPendulumsState) {
         final float _new = getOscillationsStepPerPendulum() + (inc? 1: -1) * DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM__STEP;
         if (_new > 0) {
-            setOscillationsStepPerPendulum(_new, reset);
+            setOscillationsStepPerPendulum(_new, resetPendulumsState);
         }
 
         return this;
     }
+
+
 
 
     /**
@@ -527,22 +566,38 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
      * </strong>
      *
      * @return The effective wave period of this pendulum wave, in seconds.
+     *
+     * @see #effectiveWavePeriod(float, float) effectiveWavePeriod(internalWavePeriod, oscillationsStepPerPendulum)
      * */
     public float getEffectiveWavePeriod() {
-        return oscillationsStepPerPendulum > 0? internalWavePeriod / oscillationsStepPerPendulum: 0;
+        return effectiveWavePeriod(internalWavePeriod, oscillationsStepPerPendulum);
     }
 
     /**
      * Sets the effective wave period. It just calls {@link #setInternalWavePeriod(float, boolean)}.
      *
      * @param effectiveWavePeriod effective wave period, in seconds
-     * @param reset true to reset all pendulums
+     * @param resetPendulumsState true to reset all pendulums
      *
+     * @see #internalWavePeriod(float, float) internalWavePeriod(effectiveWavePeriod, oscillationsStepPerPendulum)
      * @see #getEffectiveWavePeriod()
      * @see #setInternalWavePeriod(float, boolean)
      * */
-    public PendulumWave setEffectiveWavePeriod(float effectiveWavePeriod, boolean reset) {
-        return setInternalWavePeriod(effectiveWavePeriod * oscillationsStepPerPendulum, reset);
+    public PendulumWave setEffectiveWavePeriod(float effectiveWavePeriod, boolean resetPendulumsState) {
+        if (effectiveWavePeriod <= 0) {
+            throw new IllegalArgumentException("Effective Wave period must be > 0, given: " + internalWavePeriod);
+        }
+
+        return setInternalWavePeriod(internalWavePeriod(effectiveWavePeriod, oscillationsStepPerPendulum), resetPendulumsState);
+    }
+
+    public PendulumWave stepEffectiveWavePeriod(boolean inc, boolean resetPendulumsState) {
+        final float _new = getEffectiveWavePeriod() + (inc? 1: -1) * DEFAULT_EFFECTIVE_WAVE_PERIOD_SECS__STEP;
+        if (_new > 0) {
+            setEffectiveWavePeriod(_new, resetPendulumsState);
+        }
+
+        return this;
     }
 
 
@@ -629,7 +684,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
     }
     
     
-    private void onReset() {
+    private void onPendulumsStateReset() {
         mLastUpdateNs = -1;         // invalidate, very imp
         mElapsedSecs = 0;           // reset elapsed secs
 
@@ -637,34 +692,39 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
 //        mPausedNs = -1;
     }
 
-    public PendulumWave resetPendulums() {
-        pendulums.forEach(Pendulum::reset);
-        onReset();
+    public PendulumWave resetPendulumsState() {
+        pendulums.forEach(Pendulum::resetState);
+        onPendulumsStateReset();
         return this;
     }
 
-    public PendulumWave resetPendulumCount(boolean reset) {
-        return setPendulumCount(initialPendulumCount, reset);
+    public PendulumWave resetPendulumCount(boolean resetPendulumsState) {
+        return setPendulumCount(initialPendulumCount, resetPendulumsState);
     }
 
-    public PendulumWave resetSimulation(boolean resetPendulumCount) {
+    public PendulumWave resetSimulation(boolean resetPendulumCount, boolean resetPendulumsState) {
         // Environment
         setSpeed(DEFAULT_SPEED);
         setGravity(DEFAULT_GRAVITY, false);
         setDrag(DEFAULT_DRAG, false);
 
-        // Pendulum
+        // Pendulum Wave
         setPendulumMass(DEFAULT_PENDULUM_MASS, false);
         setPendulumStartAngle(DEFAULT_START_ANGLE, false);
-        setInternalWavePeriod(DEFAULT_WAVE_PERIOD_SECS, false);
+        setInternalWavePeriod(DEFAULT_INTERNAL_WAVE_PERIOD_SECS, false);
         setMinOscillationsInWavePeriod(DEFAULT_OSCILLATIONS_MIN, false);
         setOscillationsStepPerPendulum(DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM, false);
 
+        // Pendulums Count
         if (resetPendulumCount) {
             resetPendulumCount(false);
         }
 
-        resetPendulums();
+        // Pendulums State
+        if (resetPendulumsState) {
+            resetPendulumsState();
+        }
+
         return this;
     }
 
@@ -698,19 +758,19 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return this;
     }
 
-    private void onPendulumCountChanged(int prevCount, int newCount, boolean reset) {
+    private void onPendulumCountChanged(int prevCount, int newCount, boolean resetPendulumsState) {
         updatePendulumsLength();
 
         if (mListener != null) {
             mListener.onPendulumCountChanged(this, prevCount, newCount);
         }
 
-        if (reset) {
-            resetPendulums();
+        if (resetPendulumsState) {
+            resetPendulumsState();
         }
     }
 
-    public PendulumWave setPendulumCount(int count, boolean reset) {
+    public PendulumWave setPendulumCount(int count, boolean resetPendulumsState) {
         if (count < 1) {
             throw new IllegalArgumentException("Total number of pendulums must be >= 1. Given: " + count);
         }
@@ -730,7 +790,7 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
             }
         }
 
-        onPendulumCountChanged(prev, pendulums.size(), reset);
+        onPendulumCountChanged(prev, pendulums.size(), resetPendulumsState);
         return this;
     }
 
@@ -738,10 +798,10 @@ public class PendulumWave implements PendulumEnvironmentProvider, Pendulum.Liste
         return setPendulumCount(count, true);
     }
 
-    public PendulumWave stepPendulumCount(boolean inc, boolean reset) {
+    public PendulumWave stepPendulumCount(boolean inc, boolean resetPendulumsState) {
         final int _new = pendulumCount() + (inc? 1: -1) * DEFAULT_PENDULUM_COUNT__STEP;
         if (_new >= 1) {
-            setPendulumCount(_new, reset);
+            setPendulumCount(_new, resetPendulumsState);
         }
 
         return this;
