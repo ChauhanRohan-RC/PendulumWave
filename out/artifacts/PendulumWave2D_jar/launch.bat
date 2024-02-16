@@ -1,0 +1,1 @@
+java -jar PendulumWave2D.jar

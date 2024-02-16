@@ -11,7 +11,9 @@ import java.util.function.Consumer;
 
 /**
  * Creates a pendulum wave. <br><br>
- * A pendulum wave is a series of pendulums, with each completing one more oscillation (in a given time, say t) than the previous one. <br>
+ * A Pendulum Wave comprises a series of uncoupled simple pendulums with monotonically increasing lengths. As the pendulums oscillate, they appear to produce travelling and standing waves, beating, and random motion.<br>
+ * <br>
+ * The lengths of the pendulums are set such that in a given time t, the first pendulum completes n oscillations, and each subsequent one completes one more oscillation than the previous.<br>
  * So the first pendulum is the slowest (highest time period T), and the successive pendulums gets progressively faster (T decreases). <br><br>
  * EX. let t = 60s, and the first pendulum completes 20 oscillations within this time. Then the successive pendulum will complete 21, 22, 23... oscillations in 60s. <br><br>
  * Increase of 1 oscillation per pendulum is however not necessary. The increase in oscillations per pendulum (OSCILLATION STEP) can be any integer or floating point number.<br>

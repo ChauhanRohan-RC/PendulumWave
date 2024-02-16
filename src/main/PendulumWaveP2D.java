@@ -18,7 +18,7 @@ import java.awt.*;
  * */
 public class PendulumWaveP2D extends BasePendulumWavePUi {
 
-    private static final Dimension WINDOW_SIZE = new Dimension(round(U.SCREEN_RESOLUTION_SCALED.width * 0.8f), round(U.SCREEN_RESOLUTION_SCALED.height * 0.8f));
+    private static final Dimension DEFAULT_WINDOW_SIZE = U.scaleDimension(U.SCREEN_RESOLUTION_NATIVE, 0.8f);
 
     @NotNull
     private static Point3DF pendulumChordDrawOrigin(int width, int height, int index) {
@@ -51,10 +51,15 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
 
 
     @Override
+    public @NotNull Dimension getDefaultSurfaceDimensions() {
+        return DEFAULT_WINDOW_SIZE;
+    }
+
+    @Override
     public void settings() {
         super.settings();
 //        fullScreen(JAVA2D);
-        size(WINDOW_SIZE.width, WINDOW_SIZE.height, P2D);
+        size(DEFAULT_WINDOW_SIZE.width, DEFAULT_WINDOW_SIZE.height, P2D);
 
 //        smooth(4);
     }
@@ -62,6 +67,7 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
     public void setup() {
         super.setup();
 
+        surface.setTitle(R.TITLE_2D);
         surface.setResizable(true);
 //        surface.hideCursor();
 //        surface.setAlwaysOnTop(true);

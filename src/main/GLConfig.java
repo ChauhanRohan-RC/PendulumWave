@@ -9,8 +9,9 @@ import java.awt.*;
 
 public class GLConfig {
 
-    public static final String TITLE = "Pendulum Wave";
     public static final float FRAME_RATE = 120;
+    public static final boolean DEFAULT_WINDOW_IN_SCREEN_CENTER = true;
+
     public static final boolean DEFAULT_SOUND_ENABLED = true;
     public static final boolean DEFAULT_POLY_RHYTHM_ENABLED = MidiNotePlayer.DEFAULT_POLY_RHYTHM_ENABLED;
 

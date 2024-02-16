@@ -9,7 +9,6 @@ import peasy.org.apache.commons.math.geometry.RotationOrder;
 import peasy.org.apache.commons.math.geometry.Vector3D;
 
 import java.awt.*;
-import java.text.NumberFormat;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -35,9 +34,11 @@ public class U {
         SCREEN_RESOLUTION_SCALED = Toolkit.getDefaultToolkit().getScreenSize();
     }
 
-    public static boolean isEmpty(@Nullable CharSequence seq) {
-        return seq == null || seq.isEmpty();
+    @NotNull
+    public static Dimension scaleDimension(@NotNull Dimension o, float scale) {
+        return new Dimension(Math.round(o.width * scale), Math.round(o.height * scale));
     }
+
 
     public static <T extends Enum<T>> T cycleEnum(@NotNull Class<T> clazz, int curOrdinal) {
         final T[] values = clazz.getEnumConstants();
@@ -104,88 +105,6 @@ public class U {
         return n * n;
     }
 
-    @NotNull
-    public static String nf(float num) {
-        int inum = (int)num;
-        return num == (float)inum ? String.valueOf(inum) : String.valueOf(num);
-    }
-
-
-    public static String nf(float num, int minIntegerDigits, int minFracDigits, int maxFracDigits) {
-        final NumberFormat float_nf = NumberFormat.getInstance();
-        float_nf.setGroupingUsed(false);
-
-        if (minIntegerDigits != 0)
-            float_nf.setMinimumIntegerDigits(minIntegerDigits);
-        if (minFracDigits != 0) {
-            float_nf.setMinimumFractionDigits(minFracDigits);
-        }
-
-        if (maxFracDigits != 0) {
-            float_nf.setMaximumFractionDigits(maxFracDigits);
-        }
-
-        if (num == -0f) {
-            num = 0;
-        }
-
-        return float_nf.format(num);
-    }
-
-
-    private static NumberFormat sNumberFormat000;
-    private static NumberFormat sNumberFormat001;
-    private static NumberFormat sNumberFormat002;
-
-    public static String nf000(float num) {
-        NumberFormat nf = sNumberFormat000;
-        if (nf == null) {
-            nf = NumberFormat.getInstance();
-            nf.setGroupingUsed(false);
-            sNumberFormat000 = nf;
-        }
-
-        if (num == -0f) {
-            num = 0;
-        }
-
-        return nf.format(num);
-    }
-
-    public static String nf001(float num) {
-        NumberFormat nf = sNumberFormat001;
-        if (nf == null) {
-            nf = NumberFormat.getInstance();
-            nf.setGroupingUsed(false);
-            nf.setMaximumFractionDigits(1);
-
-            sNumberFormat001 = nf;
-        }
-
-        if (num == -0f) {
-            num = 0;
-        }
-
-        return nf.format(num);
-    }
-
-    public static String nf002(float num) {
-        NumberFormat nf = sNumberFormat002;
-        if (nf == null) {
-            nf = NumberFormat.getInstance();
-            nf.setGroupingUsed(false);
-            nf.setMaximumFractionDigits(2);
-
-            sNumberFormat002 = nf;
-        }
-
-
-        if (num == -0f) {
-            num = 0;
-        }
-
-        return nf.format(num);
-    }
 
 
     public static float lerp(float start, float stop, float amt) {
@@ -206,7 +125,7 @@ public class U {
         }
 
         if (badness != null) {
-            String msg = String.format("map(%s, %s, %s, %s, %s) called, which returns %s", nf(value), nf(start1), nf(stop1), nf(start2), nf(stop2), badness);
+            String msg = String.format("map(%s, %s, %s, %s, %s) called, which returns %s", Format.nf(value), Format.nf(start1), Format.nf(stop1), Format.nf(start2), Format.nf(stop2), badness);
             System.err.println(msg);
         }
 
@@ -315,4 +234,6 @@ public class U {
 
         return degrees;
     }
+
+
 }

@@ -20,7 +20,7 @@ import java.awt.*;
  * */
 public class PendulumWaveP3D extends BasePendulumWavePUi {
 
-    private static final Dimension WINDOW_SIZE = new Dimension(round(U.SCREEN_RESOLUTION_NATIVE.width * 0.9f), round(U.SCREEN_RESOLUTION_NATIVE.height * 0.9f));
+    private static final Dimension DEFAULT_WINDOW_SIZE = U.scaleDimension(U.SCREEN_RESOLUTION_NATIVE, 0.9f);
 
     /**
      * Separation between pendulums, in pixels
@@ -47,6 +47,10 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
         super();
     }
 
+    @Override
+    public @NotNull Dimension getDefaultSurfaceDimensions() {
+        return DEFAULT_WINDOW_SIZE;
+    }
 
     @Override
     public void settings() {
@@ -66,7 +70,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
     public void setup() {
         super.setup();
 
-        surface.setLocation((U.SCREEN_RESOLUTION_NATIVE.width - width) / 2, (U.SCREEN_RESOLUTION_NATIVE.height - height) / 2);
+        surface.setTitle(R.TITLE_3D);
 //        surface.setCursor(Cursor.MOVE_CURSOR);       // Drag for camera cursor in 3D: don't know but crashes
 
 //        surface.setResizable(true);

@@ -1,0 +1,45 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="PendulumWave3D:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/PendulumWave3D_jar</output-path>
+    <root id="archive" name="PendulumWave3D.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/out/artifacts/meta-3D/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="PendulumWave" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/commons-math3/commons-math3-3.6.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/commons-math3/commons-math3-3.6.1-src.zip" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-windows-i586.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/core-3.3.7-javadoc.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-linux-i586.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-linux-armv6hf.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-linux-armv6hf.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-linux-i586.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-windows-i586.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-linux-amd64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-linux-aarch64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-macosx-universal.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-windows-amd64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-linux-amd64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/core-3.3.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-windows-amd64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/jogl-all-natives-linux-aarch64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/gluegen-rt-natives-macosx-universal.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/core/core-3.3.7-sources.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/jsyn-17.1.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/tritonus-share-0.3.7.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/processing-sound-2.4.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/jorbis-0.0.17.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/vorbisspi-1.0.3.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/jportaudio.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/processing-sound-2.4.0-src.zip" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/jlayer-1.0.1.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/sound/mp3spi-1.9.5.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/org.jetbrains.annotations.19.0.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/peasycam/peasycam-3.0.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/peasycam/peasycam-3.0.2-math.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/processing/peasycam/peasycam-3.0.2-src.zip" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

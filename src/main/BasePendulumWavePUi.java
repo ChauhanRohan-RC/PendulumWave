@@ -11,9 +11,12 @@ import processing.core.PFont;
 import processing.event.KeyEvent;
 import processing.opengl.PJOGL;
 import sound.MidiNotePlayer;
+import util.Format;
 import util.U;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.Predicate;
 
 
@@ -100,7 +103,10 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         _w = width;
         _h = height;
 
-        surface.setTitle(GLConfig.TITLE);
+        surface.setTitle(R.TITLE);
+        if (GLConfig.DEFAULT_WINDOW_IN_SCREEN_CENTER) {
+            setSurfaceLocationCenter();
+        }
 
 //        if (sketchFullScreen()) {
 //            surface.setAlwaysOnTop(true);       // Keyboard focus, since already fullscreen so no problem in this
@@ -113,6 +119,26 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         pdSans = createFont(R.FONT_PD_SANS_REGULAR.toString(), 20);
         pdSansMedium = createFont(R.FONT_PD_SANS_MEDIUM.toString(), 20);
         textFont(pdSans);       // Default
+    }
+
+    public final void setSurfaceLocation(int x, int y) {
+        surface.setLocation(x, y);
+    }
+
+    public final void setSurfaceLocationCenter() {
+        setSurfaceLocation((U.SCREEN_RESOLUTION_NATIVE.width - width) / 2, (U.SCREEN_RESOLUTION_NATIVE.height - height) / 2);
+    }
+
+    public final void setSurfaceSize(int w, int h) {
+        surface.setSize(w, h);
+    }
+
+    @NotNull
+    public abstract Dimension getDefaultSurfaceDimensions();
+
+    public final void resetSurfaceSize() {
+        final Dimension def = getDefaultSurfaceDimensions();
+        setSurfaceSize(def.width, def.height);
     }
 
 
@@ -896,24 +922,53 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
     }
 
 
+    public final void snapshot() {
+        final boolean is3d = getCamera() != null;
+        String file_name = String.format("pendulum-wave-%dD_count-%d_time-%.2fs_mass-%.2fg_g-%.2f_drag-%.2f.png", is3d? 3: 2,
+                pendulumWave.pendulumCount(),
+                pendulumWave.getElapsedSeconds(),
+                pendulumWave.getPendulumMass() * 1000,
+                pendulumWave.gravity(),
+                pendulumWave.drag() * 1000);
+
+//        file_name = Format.replaceAllWhiteSpaces(file_name.toLowerCase(), "_");
+
+        saveFrame(file_name);
+        println(R.SHELL_ROOT + "Frame saved to file: " + file_name);
+    }
+
     /* ...................................  MAIN CLI  ............................................ */
 
-    public static final String DESCRIPTION_CONTROLS =
-            "\n## CONTROLS\n" +
-            Control.createDescription();
+    public static final String DESCRIPTION_CONTROLS = "\n## CONTROLS ----------------------------------------------------\n" + Control.getControlsDescription();
+    public static final String DESCRIPTION_COMMANDS = "\n## COMMANDS ----------------------------------------------------\n" + R.DESCRIPTION_COMMANDS;
+    public static final String DESCRIPTION_FULL = R.DESCRIPTION_GENERAL + DESCRIPTION_CONTROLS  + "\n\n" + DESCRIPTION_COMMANDS;
+
+    public static void printErr(Object o) {
+        System.err.print(o);
+        System.err.flush();
+    }
+
+    public static void printErrln(Object o) {
+        System.err.println(o);
+        System.err.flush();
+    }
+
+    public static void printErrCameraUnsupported() {
+        printErrln(R.SHELL_CAMERA + "Camera is not supported by the current Renderer!. This may happen in a 2D renderer like JAVA2D or P2D. Launch the 3D version for camera support");
+    }
+
 
     protected void main_init(String[] args) {
-
+        R.createReadme(DESCRIPTION_FULL);
     }
 
     public void main_cli(String[] args) {
-        println("-> Command Line Thread: " + Thread.currentThread().getName());
         main_init(args);
 
-//        println(R.DES_FULL);
+        println(DESCRIPTION_FULL);
+        println("-> Command Line Thread: " + Thread.currentThread().getName() + "\n");
         boolean running = true;
         Scanner sc;
-
 
         final ArrayList<String> main_cmds = new ArrayList<>();
         final Set<String> ops = new ArraySet<>();
@@ -933,11 +988,15 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
             switch (cmd) {
                 case "exit", "quit" -> running = false;
+                case "play", "start" -> tasks.add(() -> pendulumWave.setPause(false));
+                case "pause", "stop" -> tasks.add(() -> pendulumWave.setPause(true));
+                case "toggle play", "toggle pause" -> tasks.add(pendulumWave::togglePlayPause);
                 case "sound", "toggle sound" -> tasks.add(this::toggleSoundEnabled);
                 case "poly-rhythm", "toggle poly-rhythm" -> tasks.add(this::togglePolyRhythmEnabled);
                 case "hud", "toggle hud" -> tasks.add(this::toggleHudEnabled);
                 case "controls", "toggle controls", "keys", "toggle keys" -> tasks.add(this::toggleShowKeyBindings);
                 case "bobs", "toggle bobs", "bobs-only", "toggle bobs-only", "only-bobs", "toggle only-bobs" -> tasks.add(this::toggleDrawOnlyBob);
+                case "save", "saveframe", "snap", "snapshot" -> tasks.add(this::snapshot);
                 default -> {
                     final String[] tokens = splitTokens(cmd);
                     for (String s : tokens) {
@@ -959,6 +1018,63 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                     final boolean resetFlag = ops.contains("-reset");
 
                     switch (main_cmd) {
+                        case "help", "usage" -> {
+                            boolean done = false;
+
+                            if (ops.contains("-control") || ops.contains("-controls") || ops.contains("-key") || ops.contains("-keys") || ops.contains("-keybindings") || ops.contains("-key-bindings")) {
+                                println(DESCRIPTION_CONTROLS);
+                                done = true;
+                            }
+
+                            if (ops.contains("-cmd") || ops.contains("-command") || ops.contains("-commands")) {
+                                println(DESCRIPTION_COMMANDS);
+                                done = true;
+                            }
+
+                            if (!done) {        // print everything
+                                println(DESCRIPTION_FULL);
+                            }
+                        }
+
+                        case "win", "window" -> {
+                            final Runnable usage_pr = () -> println(R.SHELL_PENDULUM_WINDOW + "Sets the window size or screen location.\nUsage: win [-size | -pos] <x> <y>\nExample: win -size 200 400  |  win -pos 10 20\n");
+                            final int mode;
+
+                            if (ops.contains("-size")) {
+                                mode = 0;
+                            } else if (ops.contains("-pos") || ops.contains("-position") || ops.contains("-loc") || ops.contains("-location")) {
+                                mode = 1;
+                            } else {
+                                usage_pr.run();
+                                continue;
+                            }
+
+                            if (main_cmds.size() < 3) {
+                                usage_pr.run();
+                                continue;
+                            }
+
+                            final String v1_str = main_cmds.get(1);
+                            final String v2_str = main_cmds.get(2);
+
+                            try {
+                                final int v1 = Integer.parseInt(v1_str);
+                                final int v2 = Integer.parseInt(v2_str);
+
+                                if (mode == 0) {
+                                    tasks.add(() -> setSurfaceSize(v1, v2));
+                                } else {
+                                    tasks.add(() -> setSurfaceLocation(v1, v2));
+                                }
+                            } catch (NumberFormatException n_exc) {
+                                printErrln(R.SHELL_PENDULUM_WINDOW + String.format("Invalid arguments supplied to window %s. %s must only be integers. GIven: %s, %s", mode == 0? "size": "position", mode == 0? "Width and Height": "Screen X and Y coordinates", v1_str, v2_str));
+                                usage_pr.run();
+                            } catch (Exception exc) {
+                                printErrln(R.SHELL_PENDULUM_WINDOW + "Failed to set window " + (mode == 0? "size": "position") + ".\nException: " + exc);
+                                usage_pr.run();
+                            }
+                        }
+
                         case "n", "num", "count" -> {
                             final Runnable usage_pr = () -> println(R.SHELL_PENDULUM_COUNT + "Usage: count [-soft] <pendulum count>\nExample: count 12\n");
 
@@ -977,15 +1093,15 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                     println("\n" + R.SHELL_PENDULUM_COUNT + " Pendulum count set to " + pendulumWave.pendulumCount());
                                 });
                             } catch (IllegalArgumentException arg_exc) {
-                                printerrln(R.SHELL_PENDULUM_COUNT + "Invalid count: " + arg_exc.getMessage());
+                                printErrln(R.SHELL_PENDULUM_COUNT + "Invalid count: " + arg_exc.getMessage());
                             } catch (Exception exc) {
-                                printerrln(R.SHELL_PENDULUM_COUNT + "Failed to parse pendulum count\n" + exc);
+                                printErrln(R.SHELL_PENDULUM_COUNT + "Failed to parse pendulum count\n" + exc);
                                 usage_pr.run();
                             }
                         }
 
                         case "reset" -> {
-                            final Runnable usage_pr = () -> println(R.SHELL_RESET + "Usage: reset [-state | -env | -count | -cam | -all]\nExample: reset -env -state  |  Default: reset -cam -count\n");
+                            final Runnable usage_pr = () -> println(R.SHELL_RESET + "Usage: reset [-state | -env | -count | -cam | -win | -all]\nExample: reset -env -state  |  Default: reset -cam -count\n");
 
                             boolean done = false;
 
@@ -993,6 +1109,8 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 tasks.add(() -> {
                                     pendulumWave.resetSimulation(true, true);
 //                            resetCamera(!force);
+                                    resetSurfaceSize();
+                                    setSurfaceLocationCenter();
                                 });
 
                                 done = true;
@@ -1012,6 +1130,14 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                     done = true;
                                 }
 
+                                if (ops.contains("-win") || ops.contains("-window")) {
+                                    tasks.add(() -> {
+                                        resetSurfaceSize();
+                                        setSurfaceLocationCenter();
+                                    });
+                                    done = true;
+                                }
+
                                 if (ops.contains("-state")) {
                                     tasks.add(pendulumWave::resetPendulumsState);
                                     done = true;
@@ -1027,7 +1153,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                         case "speed" -> {
                             int mode = 0;       // 0: -x, 1: -percent
 
-                            final Runnable cur_val_pr = () -> println(R.SHELL_SPEED + String.format("Current: %sx (%s%%)  |  Default: %sx (%s%%)", U.nf001(pendulumWave.getSpeed()), U.nf001(pendulumWave.getSpeedPercent()), U.nf001(PendulumWave.DEFAULT_SPEED), U.nf001(PendulumWave.speedToPercent(PendulumWave.DEFAULT_SPEED))));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_SPEED + String.format("Current: %sx (%s%%)  |  Default: %sx (%s%%)", Format.nf001(pendulumWave.getSpeed()), Format.nf001(pendulumWave.getSpeedPercent()), Format.nf001(PendulumWave.DEFAULT_SPEED), Format.nf001(PendulumWave.speedToPercent(PendulumWave.DEFAULT_SPEED))));
                             final Runnable usage_pr = () -> println(R.SHELL_SPEED + "Usage: speed [-x | -p] <value>. Modes: -x -> Multiple | -p -> Percentage. Defaults to multiple (-x) values\nExample: speed -x 2.5 | speed -p 50\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1061,10 +1187,10 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                     done = true;
                                 }
                             } catch (OutOfRangeException oor) {
-                                printerrln(R.SHELL_SPEED + String.format("Speed %s must be within range [%s, %s], given: %s%s", mode == 0 ? "multiple" : "percent", U.nf001(oor.getLo().floatValue()), U.nf001(oor.getHi().floatValue()), U.nf000(oor.getArgument().floatValue()), mode == 0 ? "x" : "%"));
+                                printErrln(R.SHELL_SPEED + String.format("Speed %s must be within range [%s, %s], given: %s%s", mode == 0 ? "multiple" : "percent", Format.nf001(oor.getLo().floatValue()), Format.nf001(oor.getHi().floatValue()), Format.nf000(oor.getArgument().floatValue()), mode == 0 ? "x" : "%"));
                                 usage_pr.run();
                             } catch (NumberFormatException ignored) {
-                                printerrln(R.SHELL_SPEED + "Speed must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_SPEED + "Speed must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             }
 
@@ -1074,7 +1200,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                         }
 
                         case "gravity", "g" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_GRAVITY + String.format("Acceleration due to gravity. Current: %s ms-2  |  Default: %s ms-2", U.nf002(pendulumWave.gravity()), U.nf002(PendulumWave.DEFAULT_GRAVITY)));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_GRAVITY + String.format("Acceleration due to gravity. Current: %s ms-2  |  Default: %s ms-2", Format.nf002(pendulumWave.gravity()), Format.nf002(PendulumWave.DEFAULT_GRAVITY)));
                             final Runnable usage_pr = () -> println(R.SHELL_GRAVITY + "Usage: g [-reset] <value in ms-2>. \nExample: g 9.8  |  g -reset 12.4\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1088,16 +1214,16 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setGravity(val, resetFlag);
-                                    println("\n" + R.SHELL_GRAVITY + "Gravity set to " + U.nf002(pendulumWave.gravity()) + " ms-2");
+                                    println("\n" + R.SHELL_GRAVITY + "Gravity set to " + Format.nf002(pendulumWave.gravity()) + " ms-2");
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_GRAVITY + "Gravity must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_GRAVITY + "Gravity must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             }
                         }
 
                         case "drag" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_DRAG + String.format("Drag coefficient (in gram/s). Current: %s g/s  |  Default: %s g/s", U.nf002(pendulumWave.drag() * 1000), U.nf002(PendulumWave.DEFAULT_DRAG * 1000)));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_DRAG + String.format("Drag coefficient (in gram/s). Current: %s g/s  |  Default: %s g/s", Format.nf002(pendulumWave.drag() * 1000), Format.nf002(PendulumWave.DEFAULT_DRAG * 1000)));
                             final Runnable usage_pr = () -> println(R.SHELL_DRAG + "Usage: drag [-reset] <value in g/s>. \nExample: drag 1.2  |  drag -reset 2.1\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1111,16 +1237,16 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setDrag(val / 1000, resetFlag);
-                                    println("\n" + R.SHELL_DRAG + "Drag set to " + U.nf002(pendulumWave.drag() * 1000) + " g/s");
+                                    println("\n" + R.SHELL_DRAG + "Drag set to " + Format.nf002(pendulumWave.drag() * 1000) + " g/s");
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_DRAG + "Drag must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_DRAG + "Drag must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             }
                         }
 
                         case "mass" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_MASS + String.format("Pendulum Mass (in grams). Current: %s g  |  Default: %s g", U.nf002(pendulumWave.getPendulumMass() * 1000), U.nf002(PendulumWave.DEFAULT_PENDULUM_MASS * 1000)));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_MASS + String.format("Pendulum Mass (in grams). Current: %s g  |  Default: %s g", Format.nf002(pendulumWave.getPendulumMass() * 1000), Format.nf002(PendulumWave.DEFAULT_PENDULUM_MASS * 1000)));
                             final Runnable usage_pr = () -> println(R.SHELL_MASS + "Usage: mass [-reset] <value in g>. \nExample: mass 50  |  mass -reset 24.6\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1134,19 +1260,19 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setPendulumMass(val / 1000, resetFlag);
-                                    println("\n" + R.SHELL_MASS + "Pendulum Mass set to " + U.nf002(pendulumWave.getPendulumMass() * 1000) + " g");
+                                    println("\n" + R.SHELL_MASS + "Pendulum Mass set to " + Format.nf002(pendulumWave.getPendulumMass() * 1000) + " g");
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_MASS + "Pendulum Mass must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_MASS + "Pendulum Mass must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             } catch (IllegalArgumentException arg_exc) {
-                                printerrln(R.SHELL_MASS + arg_exc.getMessage());
+                                printErrln(R.SHELL_MASS + arg_exc.getMessage());
                                 usage_pr.run();
                             }
                         }
 
                         case "angle" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_ANGLE + String.format("Pendulum Start Angle (in deg). Current: %s°  |  Default: %s°", U.nf002(U.normalizeDegrees(degrees(pendulumWave.getPendulumStartAngle()))), U.nf002(U.normalizeDegrees(degrees(PendulumWave.DEFAULT_START_ANGLE)))));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_ANGLE + String.format("Pendulum Start Angle (in deg). Current: %s°  |  Default: %s°", Format.nf002(U.normalizeDegrees(degrees(pendulumWave.getPendulumStartAngle()))), Format.nf002(U.normalizeDegrees(degrees(PendulumWave.DEFAULT_START_ANGLE)))));
                             final Runnable usage_pr = () -> println(R.SHELL_ANGLE + "Usage: angle [-reset] <value in deg>. \nExample: angle 30  |  angle -reset 45.7\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1160,16 +1286,16 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setPendulumStartAngle(radians(val), resetFlag);
-                                    println("\n" + R.SHELL_ANGLE + "Pendulum Start Angle set to " + U.nf002(U.normalizeDegrees(degrees(pendulumWave.getPendulumStartAngle()))) + "°");
+                                    println("\n" + R.SHELL_ANGLE + "Pendulum Start Angle set to " + Format.nf002(U.normalizeDegrees(degrees(pendulumWave.getPendulumStartAngle()))) + "°");
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_ANGLE + "Pendulum Start Angle must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_ANGLE + "Pendulum Start Angle must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             }
                         }
 
                         case "period", "waveperiod", "wp" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_WAVE_PERIOD + String.format("Wave Period (in secs). Current: %s s  |  Default: %s s", U.nf001(pendulumWave.getEffectiveWavePeriod()), U.nf001(PendulumWave.DEFAULT_EFFECTIVE_WAVE_PERIOD_SECS)));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_WAVE_PERIOD + String.format("Wave Period (in secs). Current: %s s  |  Default: %s s", Format.nf001(pendulumWave.getEffectiveWavePeriod()), Format.nf001(PendulumWave.DEFAULT_EFFECTIVE_WAVE_PERIOD_SECS)));
                             final Runnable usage_pr = () -> println(R.SHELL_WAVE_PERIOD + "Usage: wp [-reset] <value in secs>. \nExample: wp 150  |  wp -reset 78\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1183,20 +1309,20 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setEffectiveWavePeriod(val, resetFlag);
-                                    println("\n" + R.SHELL_WAVE_PERIOD + "Pendulum Wave Period set to " + U.nf001(pendulumWave.getEffectiveWavePeriod()) + " s");
+                                    println("\n" + R.SHELL_WAVE_PERIOD + "Pendulum Wave Period set to " + Format.nf001(pendulumWave.getEffectiveWavePeriod()) + " s");
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_WAVE_PERIOD + "Pendulum Start Angle must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_WAVE_PERIOD + "Pendulum Wave Period must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             } catch (IllegalArgumentException arg_exc) {
-                                printerrln(R.SHELL_WAVE_PERIOD + arg_exc.getMessage());
+                                printErrln(R.SHELL_WAVE_PERIOD + arg_exc.getMessage());
                                 usage_pr.run();
                             }
                         }
 
                         case "minosc", "min-osc", "osc", "mosc" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_MIN_OSC + String.format("Minimum Oscillations in Wave Period. Current: %s  |  Default: %s", U.nf001(pendulumWave.getMinOscillationsInWavePeriod()), U.nf001(PendulumWave.DEFAULT_OSCILLATIONS_MIN)));
-                            final Runnable usage_pr = () -> println(R.SHELL_MIN_OSC + "Usage: mosc [-reset] <value>. \nExample: msoc 4.67  |  minsoc -reset 8.57\n");
+                            final Runnable cur_val_pr = () -> println(R.SHELL_MIN_OSC + String.format("Minimum Oscillations in Wave Period. Current: %s  |  Default: %s", Format.nf001(pendulumWave.getMinOscillationsInWavePeriod()), Format.nf001(PendulumWave.DEFAULT_OSCILLATIONS_MIN)));
+                            final Runnable usage_pr = () -> println(R.SHELL_MIN_OSC + "Usage: mosc [-reset] <value>. \nExample: mosc 4.67  |  minosc -reset 8.57\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
                             if (val_str.isEmpty()) {
@@ -1209,19 +1335,19 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setMinOscillationsInWavePeriod(val, resetFlag);
-                                    println("\n" + R.SHELL_MIN_OSC + "Min Oscillations in wave period set to " + U.nf001(pendulumWave.getMinOscillationsInWavePeriod()));
+                                    println("\n" + R.SHELL_MIN_OSC + "Min Oscillations in wave period set to " + Format.nf001(pendulumWave.getMinOscillationsInWavePeriod()));
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_MIN_OSC + "Minimum Oscillations must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_MIN_OSC + "Minimum Oscillations must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             } catch (IllegalArgumentException arg_exc) {
-                                printerrln(R.SHELL_MIN_OSC + arg_exc.getMessage());
+                                printErrln(R.SHELL_MIN_OSC + arg_exc.getMessage());
                                 usage_pr.run();
                             }
                         }
 
                         case "oscstep", "osc-step", "ostep", "step" -> {
-                            final Runnable cur_val_pr = () -> println(R.SHELL_OSC_STEP + String.format("Oscillation Step per pendulum. Current: %s  |  Default: %s", U.nf001(pendulumWave.getOscillationsStepPerPendulum()), U.nf001(PendulumWave.DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM)));
+                            final Runnable cur_val_pr = () -> println(R.SHELL_OSC_STEP + String.format("Oscillation Step per pendulum. Current: %s  |  Default: %s", Format.nf001(pendulumWave.getOscillationsStepPerPendulum()), Format.nf001(PendulumWave.DEFAULT_OSCILLATIONS_STEP_PER_PENDULUM)));
                             final Runnable usage_pr = () -> println(R.SHELL_OSC_STEP + "Usage: ostep [-reset] <value>. \nExample: ostep 0.2  |  step -reset 0.42\n");
 
                             final String val_str = main_cmds.size() > 1 ? main_cmds.get(1) : "";
@@ -1235,13 +1361,13 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final float val = Float.parseFloat(val_str);
                                 tasks.add(() -> {
                                     pendulumWave.setOscillationsStepPerPendulum(val, resetFlag);
-                                    println("\n" + R.SHELL_OSC_STEP + "Oscillation Step per pendulum set to " + U.nf001(pendulumWave.getOscillationsStepPerPendulum()));
+                                    println("\n" + R.SHELL_OSC_STEP + "Oscillation Step per pendulum set to " + Format.nf001(pendulumWave.getOscillationsStepPerPendulum()));
                                 });
                             } catch (NumberFormatException exc) {
-                                printerrln(R.SHELL_OSC_STEP + "Oscillation Step must be an integer or a floating point number, given: " + val_str);
+                                printErrln(R.SHELL_OSC_STEP + "Oscillation Step must be an integer or a floating point number, given: " + val_str);
                                 usage_pr.run();
                             } catch (IllegalArgumentException arg_exc) {
-                                printerrln(R.SHELL_OSC_STEP + arg_exc.getMessage());
+                                printErrln(R.SHELL_OSC_STEP + arg_exc.getMessage());
                                 usage_pr.run();
                             }
                         }
@@ -1275,7 +1401,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                         tasks.add(() -> rotateCameraXTo(val, !forceFlag));
                                     }
                                 } catch (NumberFormatException exc) {
-                                    printerrln(R.SHELL_ROTATION_X + "Pitch (X-Rotation) must be an integer or a floating point number, given: " + val_str);
+                                    printErrln(R.SHELL_ROTATION_X + "Pitch (X-Rotation) must be an integer or a floating point number, given: " + val_str);
                                     usage_pr.run();
                                 }
                             }
@@ -1310,7 +1436,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                         tasks.add(() -> rotateCameraYTo(val, !forceFlag));
                                     }
                                 } catch (NumberFormatException exc) {
-                                    printerrln(R.SHELL_ROTATION_Y + "Yaw (Y-Rotation) must be an integer or a floating point number, given: " + val_str);
+                                    printErrln(R.SHELL_ROTATION_Y + "Yaw (Y-Rotation) must be an integer or a floating point number, given: " + val_str);
                                     usage_pr.run();
                                 }
                             }
@@ -1345,13 +1471,13 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                         tasks.add(() -> rotateCameraZTo(val, !forceFlag));
                                     }
                                 } catch (NumberFormatException exc) {
-                                    printerrln(R.SHELL_ROTATION_Z + "Roll (Z-Rotation) must be an integer or a floating point number, given: " + val_str);
+                                    printErrln(R.SHELL_ROTATION_Z + "Roll (Z-Rotation) must be an integer or a floating point number, given: " + val_str);
                                     usage_pr.run();
                                 }
                             }
                         }
 
-                        default -> printerrln(R.SHELL_ROOT + "Unknown Command: " + main_cmd);      // Unknown command
+                        default -> printErrln(R.SHELL_ROOT + "Unknown Command: " + main_cmd);      // Unknown command
                     }
                 }
             }
@@ -1365,19 +1491,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
 
 
-    public static void printerr(Object o) {
-        System.err.print(o);
-        System.err.flush();
-    }
 
-    public static void printerrln(Object o) {
-        System.err.println(o);
-        System.err.flush();
-    }
-
-    public static void printErrCameraUnsupported() {
-        printerrln(R.SHELL_CAMERA + "Camera is not supported by the current Renderer!. This may happen in a 2D renderer like JAVA2D or P2D. Launch the 3D version for camera support");
-    }
 
 //    public static void main(String[] args) {
 //

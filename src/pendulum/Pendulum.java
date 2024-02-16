@@ -10,13 +10,13 @@ import java.awt.*;
 /**
  *
  * Equation of motion: <strong>ang_acc + (b/m * ang_vel) + (g/l * sin(angle)) = 0 </strong>, where<br>
- * ang_acc : angular acceleration, in rad s<sup>-2</sup> <br>
- * ang_vel : angular velocity, in rad/s <br>
  * m : mass of the pendulum bob, in kg <br>
  * g : acceleration due to gravity <br>
  * l : length of the pendulum chord, in meter <br>
  * b : drag coefficient, in kg/s (Positive -> drag, Negative -> push) <br>
  * angle: angle of the pendulum chord off the vertical
+ * ang_vel : angular velocity, in rad/s <br>
+ * ang_acc : angular acceleration, in rad s<sup>-2</sup> <br>
  * */
 public class Pendulum {
 

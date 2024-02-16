@@ -6,6 +6,7 @@ import peasy.PeasyCam;
 import processing.core.PApplet;
 import processing.event.Event;
 import processing.event.KeyEvent;
+import util.Format;
 import util.U;
 
 import java.awt.*;
@@ -141,11 +142,26 @@ public enum Control {
                 return false;
             }, false),
 
+    SAVE_FRAME("Save Frame",
+            "Save Current graphics frame in a png file.",
+            ui -> "",
+            "Ctrl-S",
+            "",
+            (ui, ev) -> {
+                final int mod = ev.getModifiers();
+                if (ev.getKeyCode() == java.awt.event.KeyEvent.VK_S && mod == Event.CTRL /* Ctrl only */) {
+                    ui.snapshot();
+                    return true;
+                }
+
+                return false;
+            }, false),
+
     SIMULATION_SPEED("Sim Speed",
             "Simulation Speed, in both multiples and percentage.",
             ui -> String.format("%sx (%s%%)",
-                    U.nf001(ui.getPendulumWave().getSpeed()),
-                    U.nf001(ui.getPendulumWave().getSpeedPercent())),
+                    Format.nf001(ui.getPendulumWave().getSpeed()),
+                    Format.nf001(ui.getPendulumWave().getSpeedPercent())),
             "[Shf]-/",
             "/ -> Increase Speed  |  Shift-/ -> Decrease Speed",
             (ui, ev) -> {
@@ -160,7 +176,7 @@ public enum Control {
 
     GRAVITY("Gravity",
             "Acceleration due to Gravity (in ms-2).",
-            ui -> U.nf002(ui.getPendulumWave().gravity()) + " ms-2",
+            ui -> Format.nf002(ui.getPendulumWave().gravity()) + " ms-2",
             "[Shf]-G",
             "G -> Increase Gravity  |  Shift-G -> Decrease Gravity",
             (ui, ev) -> {
@@ -175,7 +191,7 @@ public enum Control {
 
     DRAG("Drag",
             "Drag Coefficient (in g/s), Positive value corresponds to drag, negative to push.",
-            ui -> U.nf002(ui.getPendulumWave().drag() * 1000) + " g/s",
+            ui -> Format.nf002(ui.getPendulumWave().drag() * 1000) + " g/s",
             "[Shf]-D",
             "D -> Increase Drag  |  Shift-D -> Decrease Drag",
             (ui, ev) -> {
@@ -190,7 +206,7 @@ public enum Control {
 
     PENDULUM_MASS("Mass",
             "Mass of each pendulum Bob (in grams).",
-            ui -> U.nf002(ui.getPendulumWave().getPendulumMass() * 1000) + " g",
+            ui -> Format.nf002(ui.getPendulumWave().getPendulumMass() * 1000) + " g",
             "[Shf]-M",
             "M -> Increase Mass  |  Shift-M -> Decrease Mass",
             (ui, ev) -> {
@@ -205,7 +221,7 @@ public enum Control {
 
     PENDULUM_START_ANGLE("Start Angle",
             "Start angle for each pendulum (in degrees).",
-            ui -> U.nf001(U.normalizeDegrees(PApplet.degrees(ui.getPendulumWave().getPendulumStartAngle()))) + "°",
+            ui -> Format.nf001(U.normalizeDegrees(PApplet.degrees(ui.getPendulumWave().getPendulumStartAngle()))) + "°",
             "[Shf]-A",
             "A -> Increase Start Angle  |  Shift-A -> Decrease Start Angle",
             (ui, ev) -> {
@@ -220,7 +236,7 @@ public enum Control {
 
     WAVE_PERIOD("Wave Period",
             "Total time in which the Pendulum Wave completes one cycle (in secs).",
-            ui -> U.nf001(ui.getPendulumWave().getEffectiveWavePeriod()) + " s",
+            ui -> Format.nf001(ui.getPendulumWave().getEffectiveWavePeriod()) + " s",
             "[Shf]-P",
             "P -> Increase Wave Period  |  Shift-P -> Decrease Wave Period",
             (ui, ev) -> {
@@ -235,7 +251,7 @@ public enum Control {
 
     MIN_OSCILLATIONS_IN_WAVE_PERIOD("Min Osc",
             "Number of oscillations the first pendulum completes in Wave Period time.",
-            ui -> U.nf001(ui.getPendulumWave().getMinOscillationsInWavePeriod()),
+            ui -> Format.nf001(ui.getPendulumWave().getMinOscillationsInWavePeriod()),
             "[Shf]-O",
             "O -> Increase Min Osc  |  Shift-O -> Decrease Min Osc",
             (ui, ev) -> {
@@ -250,7 +266,7 @@ public enum Control {
 
     OSCILLATION_STEP_PER_PENDULUM("Osc Step",
             "Number of oscillations that a pendulum completes more than its predecessor.",
-            ui -> U.nf001(ui.getPendulumWave().getOscillationsStepPerPendulum()),
+            ui -> Format.nf001(ui.getPendulumWave().getOscillationsStepPerPendulum()),
             "[Shf]-I",
             "I -> Increase Osc Step  |  Shift-I -> Decrease Osc Step",
             (ui, ev) -> {
@@ -270,7 +286,7 @@ public enum Control {
             "Controls the Camera PITCH (rotation about X-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[0]))) + "°": "N/A";
+                return cam != null? Format.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[0]))) + "°": "N/A";
             },
             "Up/Down",
             "[UP | DOWN] arrow keys",
@@ -289,7 +305,7 @@ public enum Control {
             "Controls the Camera YAW (rotation about Y-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[1]))) + "°": "N/A";
+                return cam != null? Format.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[1]))) + "°": "N/A";
             },
             "Left/Right",
             "[LEFT | RIGHT] arrow keys",
@@ -308,7 +324,7 @@ public enum Control {
             "Controls the Camera ROLL (rotation about Z-Axis).",
             ui -> {
                 final PeasyCam cam = ui.getCamera();
-                return cam != null? U.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[2]))) + "°": "N/A";
+                return cam != null? Format.nf001(U.normalizeDegrees(PApplet.degrees(cam.getRotations()[2]))) + "°": "N/A";
             },
             "Shf-Up/Down",
             "Shift-[LEFT | RIGHT] arrow keys",
@@ -442,8 +458,11 @@ public enum Control {
 
 
     @Nullable
-    private static Control[] sValuesShared;
+    private static volatile Control[] sValuesShared;
     private static final Object sValuesLock = new Object();
+
+    @Nullable
+    private static volatile String sControlsDescription;
 
     public static Control[] getValuesShared() {
         Control[] values = sValuesShared;
@@ -462,7 +481,7 @@ public enum Control {
 
 
     @NotNull
-    public static String createDescription() {
+    private static String createControlsDescription() {
         final Control[] controls = getValuesShared();
 
         final StringBuilder sj = new StringBuilder();
@@ -504,5 +523,21 @@ public enum Control {
         }
 
         return sj.toString();
+    }
+
+    public static String getControlsDescription() {
+        String des = sControlsDescription;
+
+        if (des == null) {
+            synchronized (Control.class) {
+                des = sControlsDescription;
+                if (des == null) {
+                    des = createControlsDescription();
+                    sControlsDescription = des;
+                }
+            }
+        }
+
+        return des;
     }
 }
