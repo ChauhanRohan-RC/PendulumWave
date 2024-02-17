@@ -3,7 +3,9 @@ package main;
 import org.apache.commons.math3.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import util.Config;
 
+import java.awt.*;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -32,6 +34,72 @@ public class R {
     public static final Path FONT_PD_SANS_REGULAR = DIR_FONT.resolve("product_sans_regular.ttf");
     public static final Path FONT_PD_SANS_MEDIUM = DIR_FONT.resolve("product_sans_medium.ttf");
 
+    // Configurations
+
+    public static final Path FILE_CONFIG_2D = DIR_MAIN.resolve("config-2D.ini");
+    public static final Path FILE_CONFIG_3D = DIR_MAIN.resolve("config-3D.ini");
+
+    public static final Config CONFIG_2D = Config.obtain(FILE_CONFIG_2D);       // Since configs are lazily loaded, this does not have any cost
+    public static final Config CONFIG_3D = Config.obtain(FILE_CONFIG_3D);       // Since configs are lazily loaded, this does not have any cost
+
+    public static final String CONFIG_KEY_FULLSCREEN = "fullscreen";
+    public static final String CONFIG_KEY_WIN_WIDTH_PIXELS = "win_width";   // pixels has precedence over ratio
+    public static final String CONFIG_KEY_WIN_HEIGHT_PIXELS = "win_height"; // pixels has precedence over ratio
+    public static final String CONFIG_KEY_WIN_WIDTH_RATIO = "win_width_ratio";
+    public static final String CONFIG_KEY_WIN_HEIGHT_RATIO = "win_height_ratio";
+    public static final String CONFIG_KEY_SOUND = "sound";
+    public static final String CONFIG_KEY_POLY_RHYTHM = "poly_rhythm";
+    public static final String CONFIG_KEY_SPEED = "speed";
+    public static final String CONFIG_KEY_GRAVITY = "gravity";
+    public static final String CONFIG_KEY_DRAG = "drag";
+    public static final String CONFIG_KEY_MASS = "mass";
+    public static final String CONFIG_KEY_START_ANGLE = "start_angle";
+    public static final String CONFIG_KEY_PENDULUM_COUNT = "pendulum_count";
+    public static final String CONFIG_KEY_WAVE_PERIOD = "wave_period";
+    public static final String CONFIG_KEY_MIN_OSC = "min_osc";
+    public static final String CONFIG_KEY_OSC_STEP = "osc_step";
+
+    public static int getConfigWindowWidth(@NotNull Config config, int screenWidth, int defaultValue) {
+        int w = config.getValueInt(CONFIG_KEY_WIN_WIDTH_PIXELS, -1);
+        if (w <= 0) {
+            final float ratio = config.getValueFloat(CONFIG_KEY_WIN_WIDTH_RATIO, -1);
+            if (ratio > 0) {
+                w = Math.round(screenWidth * ratio);
+            }
+        }
+
+        if (w <= 0) {
+            w = defaultValue;
+        }
+
+        return w;
+    }
+
+    public static int getConfigWindowHeight(@NotNull Config config, int screenHeight, int defaultValue) {
+        int h = config.getValueInt(CONFIG_KEY_WIN_HEIGHT_PIXELS, -1);
+        if (h <= 0) {
+            final float ratio = config.getValueFloat(CONFIG_KEY_WIN_HEIGHT_RATIO, -1);
+            if (ratio > 0) {
+                h = Math.round(screenHeight * ratio);
+            }
+        }
+
+        if (h <= 0) {
+            h = defaultValue;
+        }
+
+        return h;
+    }
+
+    @NotNull
+    public static Dimension getConfigWindowSize(@NotNull Config config, @NotNull Dimension screenSize, @NotNull Dimension defaultValue) {
+        return new Dimension(
+                getConfigWindowWidth(config, screenSize.width, defaultValue.width),
+                getConfigWindowHeight(config, screenSize.height, defaultValue.height)
+        );
+    }
+
+
     // Shell
     private static final String SHELL_ROOT_NS = "wave";       // Name Space
 
@@ -41,7 +109,7 @@ public class R {
     }
 
     public static final String SHELL_ROOT = shellPath(null);
-    public static final String SHELL_PENDULUM_WINDOW = shellPath("win");
+    public static final String SHELL_WINDOW = shellPath("win");
     public static final String SHELL_PENDULUM_COUNT = shellPath("count");
     public static final String SHELL_RESET = shellPath("reset");
     public static final String SHELL_SPEED = shellPath("speed");

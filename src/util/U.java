@@ -35,10 +35,14 @@ public class U {
     }
 
     @NotNull
-    public static Dimension scaleDimension(@NotNull Dimension o, float scale) {
-        return new Dimension(Math.round(o.width * scale), Math.round(o.height * scale));
+    public static Dimension scaleDimension(@NotNull Dimension o, float widthScale, float heightScale) {
+        return new Dimension(Math.round(o.width * widthScale), Math.round(o.height * heightScale));
     }
 
+    @NotNull
+    public static Dimension scaleDimension(@NotNull Dimension o, float scale) {
+        return scaleDimension(o, scale, scale);
+    }
 
     public static <T extends Enum<T>> T cycleEnum(@NotNull Class<T> clazz, int curOrdinal) {
         final T[] values = clazz.getEnumConstants();

@@ -8,6 +8,7 @@ import pendulum.PendulumDrawStylesHolder;
 import pendulum.PendulumWave;
 import processing.core.PApplet;
 import processing.event.KeyEvent;
+import util.Config;
 import util.Point3DF;
 import util.U;
 
@@ -18,6 +19,8 @@ import java.awt.*;
  * */
 public class PendulumWaveP2D extends BasePendulumWavePUi {
 
+    // Fullscreen does not allow command line interface
+    private static final boolean DEFAULT_FULLSCREEN = false;
     private static final Dimension DEFAULT_WINDOW_SIZE = U.scaleDimension(U.SCREEN_RESOLUTION_NATIVE, 0.8f);
 
     @NotNull
@@ -26,16 +29,55 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
     }
 
 
+    private boolean mFullscreen = DEFAULT_FULLSCREEN;
+    @NotNull
+    private Dimension mInitialWindowSize = DEFAULT_WINDOW_SIZE;
+
     public PendulumWaveP2D(@NotNull PendulumWave pendulumWave) {
         super(pendulumWave);
+        init();
     }
 
     public PendulumWaveP2D(int initialPendulumCount) {
         super(initialPendulumCount);
+        init();
     }
 
     public PendulumWaveP2D() {
         super();
+        init();
+    }
+
+    private void init() {
+        // Handle configurations
+        final Config config = R.CONFIG_2D;
+        mFullscreen = config.getValueBool(R.CONFIG_KEY_FULLSCREEN, DEFAULT_FULLSCREEN);
+        mInitialWindowSize = R.getConfigWindowSize(config, U.SCREEN_RESOLUTION_NATIVE, DEFAULT_WINDOW_SIZE);
+
+        applyConfig(config);
+
+        // AT Last
+        attachPendulumWaveListener();       // very important
+    }
+
+    @Override
+    public boolean isRendered3D() {
+        return false;
+    }
+
+    @Override
+    public boolean isFullscreen() {
+        return mFullscreen;
+    }
+
+    @Override
+    public boolean supportsSurfaceLocationSetter() {
+        return !mFullscreen;
+    }
+
+    @Override
+    public boolean supportsSurfaceSizeSetter() {
+        return !mFullscreen;
     }
 
     @Override
@@ -51,15 +93,19 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
 
 
     @Override
-    public @NotNull Dimension getDefaultSurfaceDimensions() {
-        return DEFAULT_WINDOW_SIZE;
+    public @NotNull Dimension getInitialSurfaceDimensions() {
+        return mInitialWindowSize;
     }
 
     @Override
     public void settings() {
         super.settings();
-//        fullScreen(JAVA2D);
-        size(DEFAULT_WINDOW_SIZE.width, DEFAULT_WINDOW_SIZE.height, P2D);
+
+        if (mFullscreen) {
+            fullScreen(JAVA2D);
+        } else {
+            size(mInitialWindowSize.width, mInitialWindowSize.height, P2D);
+        }
 
 //        smooth(4);
     }
@@ -67,9 +113,12 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
     public void setup() {
         super.setup();
 
-        surface.setTitle(R.TITLE_2D);
-        surface.setResizable(true);
-//        surface.hideCursor();
+        if (mFullscreen) {
+            surface.hideCursor();
+        } else {
+            surface.setResizable(true);
+        }
+
 //        surface.setAlwaysOnTop(true);
     }
 
@@ -169,7 +218,7 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
 
     @Override
     public boolean is3D(@NotNull Pendulum p) {
-        return false;       // 2D
+        return super.is3D(p);
     }
 
     @Override

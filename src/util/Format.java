@@ -25,6 +25,10 @@ public class Format {
         return seq == null || seq.isEmpty();
     }
 
+    public static boolean notEmpty(@Nullable CharSequence seq) {
+        return !isEmpty(seq);
+    }
+
     @NotNull
     public static String toString(CharSequence seq) {
         return isEmpty(seq)? "": seq.toString();

@@ -2,7 +2,7 @@
 
 #### This is an interactive Pendulum Wave physics engine, with both 2D and 3D renderers and a real-time simulation environment with both graphical and command line control interfaces.
 
-[//]: # (#### [View Demo on YouTube]&#40;https://youtu.be/HMKS5evDOoE&#41;)
+#### [View Playlist on YouTube](https://www.youtube.com/playlist?list=PL_oeaRvQxDbTU6Mm73ya1Dn9U1l9rreFx)
 
 ###### See also
 [Fourier Series Simulation](https://github.com/ChauhanRohan-RC/Fourier-Series)  
@@ -62,13 +62,15 @@ where
 ![Pendulum Wave 2D N60](gallery/pw_2d_n60_3.png)
 
 * Navigate to [out/artifacts/PendulumWave2D_jar](out/artifacts/PendulumWave2D_jar)
-* Run [launch.bat](out/artifacts/PendulumWave2D_jar/launch.bat)
+* `Optional`: Checkout the configuration file [config-2D.ini](out/artifacts/PendulumWave2D_jar/config-2D.ini)
+* Run [launch.bat](out/artifacts/PendulumWave2D_jar/launch.bat). 
 * Optionally, open up the terminal and run `java -jar PendulumWave2D.jar`
 
 #### 3D Simulation
 ![Pendulum Wave 3D N30 flipped](gallery/pw_3d_n30_2.png)
 
 * Navigate to [out/artifacts/PendulumWave3D_jar](out/artifacts/PendulumWave3D_jar)
+* `Optional`: Checkout the configuration file [config-3D.ini](out/artifacts/PendulumWave3D_jar/config-3D.ini)
 * Run [launch.bat](out/artifacts/PendulumWave3D_jar/launch.bat)
 * Optionally, open up the terminal and run `java -jar PendulumWave3D.jar`
 

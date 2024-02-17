@@ -11,6 +11,7 @@ import processing.core.PFont;
 import processing.event.KeyEvent;
 import processing.opengl.PJOGL;
 import sound.MidiNotePlayer;
+import util.Config;
 import util.Format;
 import util.U;
 
@@ -61,8 +62,6 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
     public BasePendulumWavePUi(@NotNull PendulumWave pendulumWave) {
         this.pendulumWave = pendulumWave;
-        this.pendulumWave.setListener(this);
-
         updatePendulumDrawStyles();
     }
 
@@ -73,6 +72,21 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
     public BasePendulumWavePUi() {
         this(new PendulumWave());
     }
+
+    public final void attachPendulumWaveListener() {
+        pendulumWave.setListener(this);
+    }
+
+    public final void detachPendulumWaveListener() {
+        if (pendulumWave.getListener() == this) {
+            pendulumWave.setListener(null);
+        }
+    }
+
+
+    public abstract boolean isRendered3D();
+
+    public abstract boolean isFullscreen();
 
     /* Camera */
 
@@ -86,13 +100,22 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
     }
 
     public boolean shouldDrawAxesInHUD() {
-        return false;
+        return isRendered3D();
+    }
+
+    public boolean supportsSurfaceLocationSetter() {
+        return true;
+    }
+
+    public boolean supportsSurfaceSizeSetter() {
+        return true;
     }
 
     @Override
     public void settings() {
+        // icon
         if (R.IMAGE_PENDULUM_WAVE_ICON != null) {
-            PJOGL.setIcon(R.IMAGE_PENDULUM_WAVE_ICON.toString());       // icon
+            PJOGL.setIcon(R.IMAGE_PENDULUM_WAVE_ICON.toString());
         }
     }
 
@@ -103,9 +126,9 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         _w = width;
         _h = height;
 
-        surface.setTitle(R.TITLE);
+        surface.setTitle(isRendered3D()? R.TITLE_3D: R.TITLE_2D);
         if (GLConfig.DEFAULT_WINDOW_IN_SCREEN_CENTER) {
-            setSurfaceLocationCenter();
+            setSurfaceLocationCenter(false);
         }
 
 //        if (sketchFullScreen()) {
@@ -116,29 +139,97 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
         frameRate(GLConfig.FRAME_RATE);
 
+        // Fonts
         pdSans = createFont(R.FONT_PD_SANS_REGULAR.toString(), 20);
         pdSansMedium = createFont(R.FONT_PD_SANS_MEDIUM.toString(), 20);
         textFont(pdSans);       // Default
     }
 
-    public final void setSurfaceLocation(int x, int y) {
-        surface.setLocation(x, y);
+
+    public final void applyConfig(@NotNull Config config) {
+        // Sounds
+        mSoundEnabled = config.getValueBool(R.CONFIG_KEY_SOUND, mSoundEnabled);
+        mPolyRhythmEnabled = config.getValueBool(R.CONFIG_KEY_POLY_RHYTHM, mPolyRhythmEnabled);
+
+        // Simulation Environment
+        final float speed = config.getValueFloat(R.CONFIG_KEY_SPEED, -1f);
+        if (speed > 0)
+            pendulumWave.setSpeed(speed);
+
+        if (config.containsKey(R.CONFIG_KEY_GRAVITY)) {
+            final float gravity = config.getValueFloat(R.CONFIG_KEY_GRAVITY, pendulumWave.gravity());
+            pendulumWave.setGravity(gravity, false);
+        }
+
+        if (config.containsKey(R.CONFIG_KEY_DRAG)) {
+            final float drag = config.getValueFloat(R.CONFIG_KEY_DRAG, pendulumWave.drag() * 1000 /* in gram/s */);
+            pendulumWave.setDrag(drag / 1000 /* in kg/s */, false);
+        }
+
+        // Pendulum
+        final float mass = config.getValueFloat(R.CONFIG_KEY_MASS, -1f);
+        if (mass > 0)
+            pendulumWave.setPendulumMass(mass / 1000 /* in kg */, false);
+
+        if (config.containsKey(R.CONFIG_KEY_START_ANGLE)) {
+            final float startAngle = config.getValueFloat(R.CONFIG_KEY_START_ANGLE, degrees(pendulumWave.getPendulumStartAngle()));
+            pendulumWave.setPendulumStartAngle(radians(startAngle), false);
+        }
+
+        // Pendulum Wave
+        final int count = config.getValueInt(R.CONFIG_KEY_PENDULUM_COUNT, -1);
+        if (count > 0)
+            pendulumWave.setPendulumCount(count, false);
+
+        final float minOsc = config.getValueFloat(R.CONFIG_KEY_MIN_OSC, -1f);
+        if (minOsc > 0)
+            pendulumWave.setMinOscillationsInWavePeriod(minOsc, false);
+
+        final float osc_step = config.getValueFloat(R.CONFIG_KEY_OSC_STEP, -1f);
+        if (osc_step > 0)
+            pendulumWave.setOscillationsStepPerPendulum(osc_step, false);
+
+        final float wp = config.getValueFloat(R.CONFIG_KEY_WAVE_PERIOD, -1f);
+        if (wp > 0)
+            pendulumWave.setEffectiveWavePeriod(wp, false);     // should be last
     }
 
-    public final void setSurfaceLocationCenter() {
-        setSurfaceLocation((U.SCREEN_RESOLUTION_NATIVE.width - width) / 2, (U.SCREEN_RESOLUTION_NATIVE.height - height) / 2);
+    public final boolean setSurfaceLocation(int x, int y, boolean verbose) {
+        if (supportsSurfaceLocationSetter()) {
+            surface.setLocation(x, y);
+            return true;
+        }
+
+        if (verbose) {
+            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window position on screen!! Renderer: %s", isRendered3D()? "3D": "2D", sketchRenderer()));
+        }
+
+        return false;
     }
 
-    public final void setSurfaceSize(int w, int h) {
-        surface.setSize(w, h);
+    public final boolean setSurfaceSize(int w, int h, boolean verbose) {
+        if (supportsSurfaceSizeSetter()) {
+            surface.setSize(w, h);
+            return true;
+        }
+
+        if (verbose) {
+            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window size!! Renderer: %s", isRendered3D()? "3D": "2D", sketchRenderer()));
+        }
+
+        return false;
+    }
+
+    public final boolean setSurfaceLocationCenter(boolean verbose) {
+        return setSurfaceLocation((U.SCREEN_RESOLUTION_NATIVE.width - width) / 2, (U.SCREEN_RESOLUTION_NATIVE.height - height) / 2, verbose);
     }
 
     @NotNull
-    public abstract Dimension getDefaultSurfaceDimensions();
+    public abstract Dimension getInitialSurfaceDimensions();
 
-    public final void resetSurfaceSize() {
-        final Dimension def = getDefaultSurfaceDimensions();
-        setSurfaceSize(def.width, def.height);
+    public final void resetSurfaceSize(boolean verbose) {
+        final Dimension def = getInitialSurfaceDimensions();
+        setSurfaceSize(def.width, def.height, verbose);
     }
 
 
@@ -713,8 +804,10 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         }
     }
 
-//    @Override
-//    public boolean is3D(@NotNull Pendulum p);
+    @Override
+    public boolean is3D(@NotNull Pendulum p) {
+        return isRendered3D();
+    }
 
 //    @Override
 //    public @NotNull Point3DF chordDrawOrigin(@NotNull Pendulum p) {
@@ -771,6 +864,13 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
     @NotNull
     protected PendulumDrawStylesHolder createPendulumDrawStyle(int numPendulums, int index) {
+        if (isRendered3D()) {
+            return new PendulumDrawStylesHolder(
+                    GLConfig.createHueCycleDrawStyle3D(numPendulums, index,false),   // Normal style
+                    GLConfig.createHueCycleDrawStyle3D(numPendulums, index,true)     // Highlight style
+            );
+        }
+
         return new PendulumDrawStylesHolder(
                 GLConfig.createHueCycleDrawStyle2D(numPendulums, index,false),   // Normal style
                 GLConfig.createHueCycleDrawStyle2D(numPendulums, index,true)     // Highlight style
@@ -923,8 +1023,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
 
     public final void snapshot() {
-        final boolean is3d = getCamera() != null;
-        String file_name = String.format("pendulum-wave-%dD_count-%d_time-%.2fs_mass-%.2fg_g-%.2f_drag-%.2f.png", is3d? 3: 2,
+        String file_name = String.format("pendulum-wave-%dD_count-%d_time-%.2fs_mass-%.2fg_g-%.2f_drag-%.2f.png", isRendered3D()? 3: 2,
                 pendulumWave.pendulumCount(),
                 pendulumWave.getElapsedSeconds(),
                 pendulumWave.getPendulumMass() * 1000,
@@ -953,8 +1052,8 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         System.err.flush();
     }
 
-    public static void printErrCameraUnsupported() {
-        printErrln(R.SHELL_CAMERA + "Camera is not supported by the current Renderer!. This may happen in a 2D renderer like JAVA2D or P2D. Launch the 3D version for camera support");
+    public void printErrCameraUnsupported() {
+        printErrln(R.SHELL_CAMERA + "Camera is not supported by the current Renderer: " + sketchRenderer() + "\nThis may happen in a 2D renderer like JAVA2D or P2D. Launch the 3D version for camera support");
     }
 
 
@@ -1037,7 +1136,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                         }
 
                         case "win", "window" -> {
-                            final Runnable usage_pr = () -> println(R.SHELL_PENDULUM_WINDOW + "Sets the window size or screen location.\nUsage: win [-size | -pos] <x> <y>\nExample: win -size 200 400  |  win -pos 10 20\n");
+                            final Runnable usage_pr = () -> println(R.SHELL_WINDOW + "Sets the window size or screen location.\nUsage: win [-size | -pos] <x> <y>\nExample: win -size 200 400  |  win -pos 10 20\n");
                             final int mode;
 
                             if (ops.contains("-size")) {
@@ -1062,15 +1161,15 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 final int v2 = Integer.parseInt(v2_str);
 
                                 if (mode == 0) {
-                                    tasks.add(() -> setSurfaceSize(v1, v2));
+                                    tasks.add(() -> setSurfaceSize(v1, v2, true));
                                 } else {
-                                    tasks.add(() -> setSurfaceLocation(v1, v2));
+                                    tasks.add(() -> setSurfaceLocation(v1, v2, true));
                                 }
                             } catch (NumberFormatException n_exc) {
-                                printErrln(R.SHELL_PENDULUM_WINDOW + String.format("Invalid arguments supplied to window %s. %s must only be integers. GIven: %s, %s", mode == 0? "size": "position", mode == 0? "Width and Height": "Screen X and Y coordinates", v1_str, v2_str));
+                                printErrln(R.SHELL_WINDOW + String.format("Invalid arguments supplied to window %s. %s must only be integers. GIven: %s, %s", mode == 0? "size": "position", mode == 0? "Width and Height": "Screen X and Y coordinates", v1_str, v2_str));
                                 usage_pr.run();
                             } catch (Exception exc) {
-                                printErrln(R.SHELL_PENDULUM_WINDOW + "Failed to set window " + (mode == 0? "size": "position") + ".\nException: " + exc);
+                                printErrln(R.SHELL_WINDOW + "Failed to set window " + (mode == 0? "size": "position") + ".\nException: " + exc);
                                 usage_pr.run();
                             }
                         }
@@ -1109,8 +1208,8 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 tasks.add(() -> {
                                     pendulumWave.resetSimulation(true, true);
 //                            resetCamera(!force);
-                                    resetSurfaceSize();
-                                    setSurfaceLocationCenter();
+                                    resetSurfaceSize(false);
+                                    setSurfaceLocationCenter(false);
                                 });
 
                                 done = true;
@@ -1132,8 +1231,8 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
                                 if (ops.contains("-win") || ops.contains("-window")) {
                                     tasks.add(() -> {
-                                        resetSurfaceSize();
-                                        setSurfaceLocationCenter();
+                                        resetSurfaceSize(true);
+                                        setSurfaceLocationCenter(true);
                                     });
                                     done = true;
                                 }
