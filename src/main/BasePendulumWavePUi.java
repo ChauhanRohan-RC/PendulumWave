@@ -34,6 +34,10 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
      * */
     private static final int ACTION_EXECUTE_RUNNABLE = 121230123;
 
+    @NotNull
+    public static Dimension getNativeScreenResolution() {
+        return U.SCREEN_RESOLUTION_NATIVE;
+    }
 
 
     private int _w, _h;
@@ -88,6 +92,11 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
     public abstract boolean isFullscreen();
 
+    public abstract boolean isInitialFullscreenExpanded();
+
+    @NotNull
+    public abstract Dimension getInitialWindowedSize();
+
     /* Camera */
 
     @Nullable
@@ -126,8 +135,19 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         _w = width;
         _h = height;
 
+        // Surface methods  ..........................................................................
         surface.setTitle(isRendered3D()? R.TITLE_3D: R.TITLE_2D);
-        if (GLConfig.DEFAULT_WINDOW_IN_SCREEN_CENTER) {
+        if (supportsSurfaceSizeSetter()) {
+            surface.setResizable(true);
+        }
+
+        // Fullscreen does not expand to entire screen with P2D and P3D renderers. THis hack solves the problem
+        if (isFullscreen()) {       // (P2D.equals(sketchRenderer()) || P3D.equals(sketchRenderer()))
+            // A Hack to force window to fullscreen with P2D and P3D. only works after a certain delay, so post an event
+            enqueueTask(() -> setFullscreenExpanded(isInitialFullscreenExpanded(), false));
+        }
+
+        if (GLConfig.DEFAULT_WINDOW_IN_SCREEN_CENTER && !isFullscreen()) {
             setSurfaceLocationCenter(false);
         }
 
@@ -139,7 +159,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
         frameRate(GLConfig.FRAME_RATE);
 
-        // Fonts
+        // Fonts  .............................................................................
         pdSans = createFont(R.FONT_PD_SANS_REGULAR.toString(), 20);
         pdSansMedium = createFont(R.FONT_PD_SANS_MEDIUM.toString(), 20);
         textFont(pdSans);       // Default
@@ -201,7 +221,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         }
 
         if (verbose) {
-            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window position on screen!! Renderer: %s", isRendered3D()? "3D": "2D", sketchRenderer()));
+            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window position on screen!!\n\tRenderer: %s\n\tFullscreen: %b", isRendered3D()? "3D": "2D", sketchRenderer(), isFullscreen()));
         }
 
         return false;
@@ -214,22 +234,74 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         }
 
         if (verbose) {
-            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window size!! Renderer: %s", isRendered3D()? "3D": "2D", sketchRenderer()));
+            printErrln(R.SHELL_WINDOW + String.format("Current %s renderer does not support changing window size!!\n\tRenderer: %s\n\tFullscreen: %b", isRendered3D()? "3D": "2D", sketchRenderer(), isFullscreen()));
         }
 
         return false;
     }
 
     public final boolean setSurfaceLocationCenter(boolean verbose) {
-        return setSurfaceLocation((U.SCREEN_RESOLUTION_NATIVE.width - width) / 2, (U.SCREEN_RESOLUTION_NATIVE.height - height) / 2, verbose);
+        final Dimension screen_res = getNativeScreenResolution();
+        return setSurfaceLocation((screen_res.width - width) / 2, (screen_res.height - height) / 2, verbose);
     }
 
-    @NotNull
-    public abstract Dimension getInitialSurfaceDimensions();
-
-    public final void resetSurfaceSize(boolean verbose) {
-        final Dimension def = getInitialSurfaceDimensions();
+    public final void setSurfaceToInitialWindowedSize(boolean centerOnScreen, boolean verbose) {
+        final Dimension def = getInitialWindowedSize();
         setSurfaceSize(def.width, def.height, verbose);
+
+        if (centerOnScreen) {
+            setSurfaceLocationCenter(verbose);
+        }
+    }
+
+    // A Hack to force window to fullscreen with P2D and P3D.
+    private void setSurfaceToNativeFullscreenSize() {
+        final Dimension screen_res = getNativeScreenResolution();
+        surface.setSize(screen_res.width, screen_res.height);
+        surface.setLocation(0, 0);
+    }
+
+    /**
+     * @return true if this window is in fullscreen mode and is expanded on the entire screen native resolution
+     *
+     * @see #isFullscreen()
+     * @see #getNativeScreenResolution()
+     * */
+    public final boolean isFullscreenExpanded() {
+        final Dimension screen_res;
+        return isFullscreen() && (screen_res = getNativeScreenResolution()).width == width && screen_res.height == height;
+    }
+
+    /**
+     * Expand or window a fullscreen PGraphics surface<br>
+     * <br>
+     * Expand: Fill the entire screen native resolution<br>
+     * Window: Set the surface size to initial windowed size, as given by {@link #getInitialWindowedSize()} and center on screen
+     * */
+    public final void setFullscreenExpanded(boolean expanded, boolean verbose) {
+        if (!isFullscreen())
+            return;
+
+        if (expanded) {
+            setSurfaceToNativeFullscreenSize();
+        } else {
+            setSurfaceToInitialWindowedSize(true, verbose);
+        }
+    }
+
+    public final void toggleFullscreenExpanded(boolean verbose) {
+        if (!isFullscreen())
+            return;
+
+        setFullscreenExpanded(!isFullscreenExpanded(), verbose);
+    }
+
+    public final void resetSurfaceSizeAndPos(boolean verbose) {
+        if (isFullscreen()) {
+            setFullscreenExpanded(isInitialFullscreenExpanded(), verbose);
+        } else {
+            setSurfaceToInitialWindowedSize(true, verbose);
+        }
     }
 
 
@@ -446,7 +518,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         return statusTopY;
     }
 
-    private void drawHUDAxes(@Nullable PeasyCam cam, float topX, float topY, float lenAxis) {
+    private float drawHUDAxes(@Nullable PeasyCam cam, float topX, float topY, float lenAxis) {
         pushMatrix();
         pushStyle();
 
@@ -477,6 +549,8 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
         popStyle();
         popMatrix();
+
+        return topY + (lenAxis * 2);
     }
 
     protected void drawHUD() {
@@ -498,13 +572,21 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
         final PeasyCam cam = getCamera();
         final boolean drawAxes = shouldDrawAxesInHUD();
         float y_1 = pady;
+
         if (drawAxes) {
-            drawHUDAxes(cam, padx, pady, lenAxis);
-            y_1 = (lenAxis * 2) + (pady * 2);
+            y_1 = drawHUDAxes(cam, padx, y_1, lenAxis);
+            y_1 += (pady * 2);      // vgap
         }
 
-        if (cam != null && hudEnabled) {
-            drawMainControlsAlignLeft(Control.CONTROLS_CAMERA, y_1 + pady, padx, 0, vgap_main, keyBindingsFilter);
+        if (hudEnabled) {
+            if (cam != null) {
+                y_1 = drawMainControlsAlignLeft(Control.CONTROLS_CAMERA, y_1, padx, 0, vgap_main, keyBindingsFilter);
+                y_1 += (pady * 1.5f);   // vgap
+            }
+
+            if (isFullscreen()) {
+                drawMainControlsAlignLeft(Control.CONTROLS_FULLSCREEN_WINDOW, y_1, padx, 0, vgap_main, keyBindingsFilter);
+            }
         }
 
         /* TOP-RIGHT and BOTTOM: HUD and Status ................................................... */
@@ -1058,7 +1140,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
 
     protected void main_init(String[] args) {
-        R.createReadme(DESCRIPTION_FULL);
+//        R.createReadme(DESCRIPTION_FULL);
     }
 
     public void main_cli(String[] args) {
@@ -1136,9 +1218,10 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                         }
 
                         case "win", "window" -> {
-                            final Runnable usage_pr = () -> println(R.SHELL_WINDOW + "Sets the window size or screen location.\nUsage: win [-size | -pos] <x> <y>\nExample: win -size 200 400  |  win -pos 10 20\n");
+                            final Runnable usage_pr = () -> println(R.SHELL_WINDOW + "Sets the window size or screen location.\nUsage: win [-size | -pos] <x> <y>\nWildcards: w -> initial windowed size (to be used with -size)  |  c -> center window on screen (to be used with -pos)\nExample: win -size 200 400  |  win -pos 10 20  |  win -pos center  |  win -size w\n");
                             final int mode;
 
+                            // Mode: 0 -> Size, 1 -> Position
                             if (ops.contains("-size")) {
                                 mode = 0;
                             } else if (ops.contains("-pos") || ops.contains("-position") || ops.contains("-loc") || ops.contains("-location")) {
@@ -1148,29 +1231,46 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 continue;
                             }
 
-                            if (main_cmds.size() < 3) {
-                                usage_pr.run();
-                                continue;
+                            // Wildcards
+                            final String wildcard = main_cmds.size() == 2? main_cmds.get(1): null;
+                            boolean wildcardDone = false;
+
+                            if (Format.notEmpty(wildcard)) {
+                                if (mode == 0 && (wildcard.equals("w") || wildcard.equals("win") || wildcard.equals("window") || wildcard.equals("windowed"))) {
+                                    tasks.add(() -> setSurfaceToInitialWindowedSize(false, true));
+                                    wildcardDone = true;
+                                } else if (mode == 1 && (wildcard.equals("c") || wildcard.equals("center"))) {
+                                    tasks.add(() -> setSurfaceLocationCenter(true));
+                                    wildcardDone = true;
+                                }
                             }
 
-                            final String v1_str = main_cmds.get(1);
-                            final String v2_str = main_cmds.get(2);
-
-                            try {
-                                final int v1 = Integer.parseInt(v1_str);
-                                final int v2 = Integer.parseInt(v2_str);
-
-                                if (mode == 0) {
-                                    tasks.add(() -> setSurfaceSize(v1, v2, true));
-                                } else {
-                                    tasks.add(() -> setSurfaceLocation(v1, v2, true));
+                            // Main commands
+                            if (!wildcardDone) {
+                                if (main_cmds.size() < 3) {
+                                    usage_pr.run();
+                                    continue;
                                 }
-                            } catch (NumberFormatException n_exc) {
-                                printErrln(R.SHELL_WINDOW + String.format("Invalid arguments supplied to window %s. %s must only be integers. GIven: %s, %s", mode == 0? "size": "position", mode == 0? "Width and Height": "Screen X and Y coordinates", v1_str, v2_str));
-                                usage_pr.run();
-                            } catch (Exception exc) {
-                                printErrln(R.SHELL_WINDOW + "Failed to set window " + (mode == 0? "size": "position") + ".\nException: " + exc);
-                                usage_pr.run();
+
+                                final String v1_str = main_cmds.get(1);
+                                final String v2_str = main_cmds.get(2);
+
+                                try {
+                                    final int v1 = Integer.parseInt(v1_str);
+                                    final int v2 = Integer.parseInt(v2_str);
+
+                                    if (mode == 0) {
+                                        tasks.add(() -> setSurfaceSize(v1, v2, true));
+                                    } else {
+                                        tasks.add(() -> setSurfaceLocation(v1, v2, true));
+                                    }
+                                } catch (NumberFormatException n_exc) {
+                                    printErrln(R.SHELL_WINDOW + String.format("Invalid arguments supplied to window %s. %s must only be integers. GIven: %s, %s", mode == 0? "size": "position", mode == 0? "Width and Height": "Screen X and Y coordinates", v1_str, v2_str));
+                                    usage_pr.run();
+                                } catch (Exception exc) {
+                                    printErrln(R.SHELL_WINDOW + "Failed to set window " + (mode == 0? "size": "position") + ".\nException: " + exc);
+                                    usage_pr.run();
+                                }
                             }
                         }
 
@@ -1208,8 +1308,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 tasks.add(() -> {
                                     pendulumWave.resetSimulation(true, true);
 //                            resetCamera(!force);
-                                    resetSurfaceSize(false);
-                                    setSurfaceLocationCenter(false);
+                                    resetSurfaceSizeAndPos(false);
                                 });
 
                                 done = true;
@@ -1230,10 +1329,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
                                 }
 
                                 if (ops.contains("-win") || ops.contains("-window")) {
-                                    tasks.add(() -> {
-                                        resetSurfaceSize(true);
-                                        setSurfaceLocationCenter(true);
-                                    });
+                                    tasks.add(() -> resetSurfaceSizeAndPos(true));
                                     done = true;
                                 }
 

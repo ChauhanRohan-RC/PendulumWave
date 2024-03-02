@@ -112,6 +112,7 @@ where
   * `Shift-I` : decrease oscillation step
 
 #### Simulation, Sound and Graphics Controls
+* `W` : Toggle fullscreen window mode between `EXPANDED` and `WINDOWED` (only when fullscreen) (Discrete)
 * `Space` : Play/Pause simulation (Discrete)
 * `Ctrl-S` : Save current graphics frame in a png file
 * `[Ctrl | Shift]-R` : Reset the Simulation (Discrete)
@@ -197,6 +198,9 @@ where
   * Options
     * `-size` : set window size
     * `-pos` : set window location on screen
+  * Wildcards
+    * `w` : set to initial windowed size. To be used with `-size` option
+    * `c` : center window on screen. To be used with `-pos` option
 
 #### Camera Commands
 * `pitch [-by | -f] <+ | - | value_in_deg>` : Sets the camera pitch (rotation about X-axis)

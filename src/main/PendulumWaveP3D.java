@@ -15,15 +15,19 @@ import util.U;
 import java.awt.*;
 
 /**
- * A 2D graphical engine for {@link PendulumWave Pendulum Wave} in Processing 3
+ * A 2D graphical engine for {@link PendulumWave Pendulum Wave} in Processing 3<br>
  *
  * TODO: pendulum support as cylinder, switchable spot lighting
  * */
 public class PendulumWaveP3D extends BasePendulumWavePUi {
 
-    // Although fullscreen does not work normally with P3D, Resize works horribly outside fullscreen in P3D. So fullscreen is better
+    // Fullscreen does not expand to entire screen with P2D and P3D renderers. See hack in setup() which solves this problem
     private static final boolean DEFAULT_FULLSCREEN = true;
-    private static final Dimension DEFAULT_WINDOW_SIZE = U.scaleDimension(U.SCREEN_RESOLUTION_NATIVE, 0.9f, 0.86f);
+
+    // Whether the fullscreen should be fully expanded or same as initial window size
+    private static final boolean DEFAULT_INITIAL_FULLSCREEN_EXPANDED = false;
+
+    private static final Dimension DEFAULT_INITIAL_WINDOW_SIZE = U.scaleDimension(getNativeScreenResolution(), 0.8f);
 
     /**
      * Separation between pendulums, in pixels
@@ -39,8 +43,9 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
     private PeasyCam cam;
 
     private boolean mFullscreen = DEFAULT_FULLSCREEN;
+    private boolean mInitialFullscreenExpanded = DEFAULT_INITIAL_FULLSCREEN_EXPANDED;
     @NotNull
-    private Dimension mInitialWindowSize = DEFAULT_WINDOW_SIZE;
+    private Dimension mInitialWindowedSize = DEFAULT_INITIAL_WINDOW_SIZE;
 
     public PendulumWaveP3D(@NotNull PendulumWave pendulumWave) {
         super(pendulumWave);
@@ -61,7 +66,8 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
         // Handle configurations
         final Config config = R.CONFIG_3D;
         mFullscreen = config.getValueBool(R.CONFIG_KEY_FULLSCREEN, DEFAULT_FULLSCREEN);
-        mInitialWindowSize = R.getConfigWindowSize(config, U.SCREEN_RESOLUTION_NATIVE, DEFAULT_WINDOW_SIZE);
+        mInitialFullscreenExpanded = config.getValueBool(R.CONFIG_KEY_INITIAL_FULLSCREEN_EXPANDED, DEFAULT_INITIAL_FULLSCREEN_EXPANDED);
+        mInitialWindowedSize = R.getConfigWindowSize(config, getNativeScreenResolution(), DEFAULT_INITIAL_WINDOW_SIZE);
 
         applyConfig(config);
 
@@ -80,18 +86,23 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
     }
 
     @Override
+    public boolean isInitialFullscreenExpanded() {
+        return mInitialFullscreenExpanded;
+    }
+
+    @Override
     public boolean supportsSurfaceLocationSetter() {
-        return true;
+        return super.supportsSurfaceLocationSetter();
     }
 
     @Override
     public boolean supportsSurfaceSizeSetter() {
-        return false;
+        return super.supportsSurfaceSizeSetter();
     }
 
     @Override
-    public @NotNull Dimension getInitialSurfaceDimensions() {
-        return mInitialWindowSize;
+    public @NotNull Dimension getInitialWindowedSize() {
+        return mInitialWindowedSize;
     }
 
     @Override
@@ -101,7 +112,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
         if (mFullscreen) {
             fullScreen(P3D);
         } else {
-            size(mInitialWindowSize.width, mInitialWindowSize.height, P3D);
+            size(mInitialWindowedSize.width, mInitialWindowedSize.height, P3D);
         }
 
         smooth(4);
@@ -109,10 +120,6 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
 
     public void setup() {
         super.setup();
-
-        if (!mFullscreen) {
-            surface.setResizable(false);    // Resize works horribly outside fullscreen in P3D renderer
-        }
 
 //        surface.setCursor(Cursor.MOVE_CURSOR);       // PeasyCam crashes when cursor is hidden
 //        surface.setResizable(true);
@@ -215,6 +222,7 @@ public class PendulumWaveP3D extends BasePendulumWavePUi {
     @Override
     protected void onResized(int width, int height) {
         super.onResized(width, height);
+        recreateCamera(true);
     }
 
 

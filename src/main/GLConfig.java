@@ -48,10 +48,10 @@ public class GLConfig {
     public static final float TEXT_SIZE_HUGE = 0.034f;
     public static final float TEXT_SIZE_EXTRA_LARGE = 0.028f;
     public static final float TEXT_SIZE_LARGE = 0.026f;
-    public static final float TEXT_SIZE_NORMAL = 0.024f;
-    public static final float TEXT_SIZE_SMALL1 = 0.020f;
-    public static final float TEXT_SIZE_SMALL2 = 0.0185f;
-    public static final float TEXT_SIZE_SMALL3 = 0.017f;
+    public static final float TEXT_SIZE_NORMAL = 0.023f;
+    public static final float TEXT_SIZE_SMALL1 = 0.019f;
+    public static final float TEXT_SIZE_SMALL2 = 0.0175f;
+    public static final float TEXT_SIZE_SMALL3 = 0.016f;
     public static final float TEXT_SIZE_TINY = 0.014f;
 
 

@@ -2,6 +2,9 @@
 This is an interactive Pendulum Wave physics engine, with both 2D and 3D renderers and a real-time simulation environment
 
 ## CONTROLS ----------------------------------------------------
+-> W : Window  [Discrete]
+	Sets the fullscreen mode to Expanded or Windowed.
+
 -> [Ctr | Shf]-N : Pendulums  [Discrete]
 	Number of Pendulums in the Pendulum Wave.
 	<Keys> : N -> Increase Count  |  Shift-N -> Decrease Count  |  Ctrl-[Shift]-N -> Change count without resetting pendulums state
@@ -133,8 +136,11 @@ This is an interactive Pendulum Wave physics engine, with both 2D and 3D rendere
 
 -> win [-size | -pos] <x> <y> : Sets the window size or location on screen
    Options
-   1. -size -> set window size
+   1. -size -> set window size.
    2. -pos -> set window location on screen
+   Wildcards
+   1. w : set to initial windowed size. To be used with -size option
+   2. c : center window on screen. To be used with -pos option
 
 -> pitch [-by | -f] <+ | - | value_in_deg> : Sets the camera pitch (rotation about X-axis)
    Alias: rx, rotx, rotationx

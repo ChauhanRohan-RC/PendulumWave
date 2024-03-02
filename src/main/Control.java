@@ -15,6 +15,23 @@ import java.util.function.Function;
 
 public enum Control {
 
+    // Only when fullscreen
+    EXPAND_FULLSCREEN("Window",
+            "Sets the fullscreen mode to Expanded or Windowed.",
+            ui -> ui.isFullscreenExpanded()? "EXP": "WIN",
+            "W",
+            "",
+            (ui, ev) -> {
+                final int mod = ev.getModifiers();
+                final int kc = ev.getKeyCode();
+                if (ui.isFullscreen() && kc == java.awt.event.KeyEvent.VK_W && mod == 0) {
+                    ui.toggleFullscreenExpanded(true);
+                    return true;
+                }
+
+                return false;
+            }, false),
+
     PENDULUM_COUNT("Pendulums",
             "Number of Pendulums in the Pendulum Wave.",
             ui -> String.valueOf(ui.getPendulumWave().pendulumCount()),
@@ -454,6 +471,10 @@ public enum Control {
             CAMERA_ROTATE_X,
             CAMERA_ROTATE_Y,
             CAMERA_ROTATE_Z
+    };
+
+    public static final Control[] CONTROLS_FULLSCREEN_WINDOW = {
+            EXPAND_FULLSCREEN
     };
 
 

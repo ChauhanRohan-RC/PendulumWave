@@ -4,12 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -151,6 +153,47 @@ public class Config {
         }
     }
 
+
+
+    public static int getConfigWindowWidth(@NotNull Config config, @NotNull String key_win_width_pixels, @NotNull String key_win_width_ratio, int screenWidth, int defaultValue) {
+        int w = config.getValueInt(key_win_width_pixels, -1);
+        if (w <= 0) {
+            final float ratio = config.getValueFloat(key_win_width_ratio, -1);
+            if (ratio > 0) {
+                w = Math.round(screenWidth * ratio);
+            }
+        }
+
+        if (w <= 0) {
+            w = defaultValue;
+        }
+
+        return w;
+    }
+
+    public static int getConfigWindowHeight(@NotNull Config config, @NotNull String key_win_height_pixels, @NotNull String key_win_height_ratio, int screenHeight, int defaultValue) {
+        int h = config.getValueInt(key_win_height_pixels, -1);
+        if (h <= 0) {
+            final float ratio = config.getValueFloat(key_win_height_ratio, -1);
+            if (ratio > 0) {
+                h = Math.round(screenHeight * ratio);
+            }
+        }
+
+        if (h <= 0) {
+            h = defaultValue;
+        }
+
+        return h;
+    }
+
+    @NotNull
+    public static Dimension getConfigWindowSize(@NotNull Config config, @NotNull String key_win_width_pixels, @NotNull String key_win_height_pixels, @NotNull String key_win_width_ratio, @NotNull String key_win_height_ratio, @NotNull Dimension screenSize, @NotNull Dimension defaultValue) {
+        return new Dimension(
+                getConfigWindowWidth(config, key_win_width_pixels, key_win_width_ratio, screenSize.width, defaultValue.width),
+                getConfigWindowHeight(config, key_win_height_pixels, key_win_height_ratio, screenSize.height, defaultValue.height)
+        );
+    }
 
 
     static boolean isEmpty(@Nullable CharSequence seq) {
