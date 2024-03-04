@@ -154,7 +154,6 @@ public class Config {
     }
 
 
-
     public static int getConfigWindowWidth(@NotNull Config config, @NotNull String key_win_width_pixels, @NotNull String key_win_width_ratio, int screenWidth, int defaultValue) {
         int w = config.getValueInt(key_win_width_pixels, -1);
         if (w <= 0) {
@@ -194,6 +193,9 @@ public class Config {
                 getConfigWindowHeight(config, key_win_height_pixels, key_win_height_ratio, screenSize.height, defaultValue.height)
         );
     }
+
+
+
 
 
     static boolean isEmpty(@Nullable CharSequence seq) {
@@ -279,6 +281,11 @@ public class Config {
         return getConfigMapInternal().get(key);
     }
 
+    public String getValueString(@NotNull String key, String defaultValue) {
+        final String val = getConfigMapInternal().get(key);
+        return isEmpty(val)? defaultValue: val;
+    }
+
 
     /**
      * @return the value with desired type, or {@code null} if no key is not defined
@@ -293,7 +300,7 @@ public class Config {
 
         try {
             return caster.apply(val);
-        } catch (ClassCastException exc) {
+        } catch (ClassCastException | NumberFormatException exc) {
             throw new ClassCastException("Failed to cast configuration value to desired type. Key: " + key + ", Error: " + exc.getMessage());
         }
     }
@@ -303,7 +310,7 @@ public class Config {
         if (notEmpty(val)) {
             try {
                 return caster.apply(val);
-            } catch (ClassCastException ignored) {
+            } catch (ClassCastException | NumberFormatException ignored) {
             }
         }
 
@@ -315,7 +322,7 @@ public class Config {
         if (notEmpty(val)) {
             try {
                 return Integer.parseInt(val);
-            } catch (ClassCastException ignored) {
+            } catch (NumberFormatException ignored) {
             }
         }
 
@@ -327,7 +334,7 @@ public class Config {
         if (notEmpty(val)) {
             try {
                 return Float.parseFloat(val);
-            } catch (ClassCastException ignored) {
+            } catch (NumberFormatException ignored) {
             }
         }
 
@@ -339,7 +346,7 @@ public class Config {
         if (notEmpty(val)) {
             try {
                 return Long.parseLong(val);
-            } catch (ClassCastException ignored) {
+            } catch (NumberFormatException ignored) {
             }
         }
 
@@ -350,8 +357,8 @@ public class Config {
         final String val = getConfigMapInternal().get(key);
         if (notEmpty(val)) {
             try {
-                return Integer.parseInt(val);
-            } catch (ClassCastException ignored) {
+                return Double.parseDouble(val);
+            } catch (NumberFormatException ignored) {
             }
         }
 

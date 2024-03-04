@@ -15,6 +15,21 @@ import java.util.function.Function;
 
 public enum Control {
 
+    ESCAPE("Exit",
+            "Stop solving | Cancel pending moves | exit",
+            ui -> "",
+            "Esc",
+            "Escape key",
+            (ui, ev) -> {
+//                final int mod = ev.getModifiers();
+                if (ev.getKeyCode() == Control.ESCAPE_KEY_CODE_SUBSTITUTE) {
+                    ui.exit();
+                    return true;
+                }
+
+                return false;
+            }, false),
+
     // Only when fullscreen
     EXPAND_FULLSCREEN("Window",
             "Sets the fullscreen mode to Expanded or Windowed.",
@@ -426,6 +441,34 @@ public enum Control {
      */
     public boolean handleKeyEvent(@NotNull BasePendulumWavePUi baseUi, @NotNull KeyEvent event) {
         return keyEventHandler.apply(baseUi, event);
+    }
+
+
+
+
+    /* ............................................................................ */
+
+    /**
+     * A substitute for {@link java.awt.event.KeyEvent#VK_ESCAPE} to be able to handle this event manually
+     * */
+    public static final int ESCAPE_KEY_CODE_SUBSTITUTE = Integer.MAX_VALUE;
+
+    /**
+     * A substitute for {@link processing.core.PConstants#ESC} to be able to handle this event manually
+     * */
+    public static final char ESCAPE_KEY_SUBSTITUTE = Character.MAX_VALUE;
+
+    @NotNull
+    public static KeyEvent changeKeyCode(@NotNull KeyEvent src, int newKeyCode, char newKey) {
+        return new KeyEvent(
+                src.getNative(),
+                src.getMillis(),
+                src.getAction(),
+                src.getModifiers(),
+                newKey,
+                newKeyCode,
+                src.isAutoRepeat()
+        );
     }
 
 

@@ -714,6 +714,11 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
     @Override
     protected final void handleKeyEvent(KeyEvent event) {
+        // If this is an ESC key down event, mask it to be able to handle it myself
+        if (event.getAction() == KeyEvent.PRESS && (event.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE)) {
+            event = Control.changeKeyCode(event, Control.ESCAPE_KEY_CODE_SUBSTITUTE, Control.ESCAPE_KEY_SUBSTITUTE);
+        }
+
         super.handleKeyEvent(event);
 
         // Handle Custom Events
