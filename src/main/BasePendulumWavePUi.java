@@ -26,6 +26,8 @@ import java.util.function.Predicate;
  * */
 public abstract class BasePendulumWavePUi extends PApplet implements PendulumStyleProvider, PendulumWave.Listener {
 
+    private static final boolean CREATE_README = false;
+
     /**
      * Custom event with a {@link Runnable} task payload to be executed on the UI thread
      *
@@ -130,7 +132,7 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
 
     public void setup() {
-        println("-> UI Thread: " + Thread.currentThread().getName());
+//        println("-> UI Thread: " + Thread.currentThread().getName());
 
         _w = width;
         _h = height;
@@ -1125,10 +1127,6 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
     /* ...................................  MAIN CLI  ............................................ */
 
-    public static final String DESCRIPTION_CONTROLS = "\n## CONTROLS ----------------------------------------------------\n" + Control.getControlsDescription();
-    public static final String DESCRIPTION_COMMANDS = "\n## COMMANDS ----------------------------------------------------\n" + R.DESCRIPTION_COMMANDS;
-    public static final String DESCRIPTION_FULL = R.DESCRIPTION_GENERAL + DESCRIPTION_CONTROLS  + "\n\n" + DESCRIPTION_COMMANDS;
-
     public static void printErr(Object o) {
         System.err.print(o);
         System.err.flush();
@@ -1145,14 +1143,16 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
 
     protected void main_init(String[] args) {
-//        R.createReadme(DESCRIPTION_FULL);
+        if (CREATE_README) {
+            R.createFullDescriptionReadme(true);
+        }
     }
 
     public void main_cli(String[] args) {
         main_init(args);
 
-        println(DESCRIPTION_FULL);
-        println("-> Command Line Thread: " + Thread.currentThread().getName() + "\n");
+        println(R.DESCRIPTION_GENERAL_WITH_HELP);
+//        println("-> Command Line Thread: " + Thread.currentThread().getName() + "\n");
         boolean running = true;
         Scanner sc;
 
@@ -1205,20 +1205,27 @@ public abstract class BasePendulumWavePUi extends PApplet implements PendulumSty
 
                     switch (main_cmd) {
                         case "help", "usage" -> {
+                            final Runnable usage_pr = () -> println(R.SHELL_ROOT + "Usage: help [-controls | -commands | -all]");
+
+                            if (ops.contains("-all")) {
+                                println("\n" + R.getFullDescription(true, true));
+                                continue;
+                            }
+
                             boolean done = false;
 
                             if (ops.contains("-control") || ops.contains("-controls") || ops.contains("-key") || ops.contains("-keys") || ops.contains("-keybindings") || ops.contains("-key-bindings")) {
-                                println(DESCRIPTION_CONTROLS);
+                                println("\n" + R.getControlsDescription());
                                 done = true;
                             }
 
                             if (ops.contains("-cmd") || ops.contains("-command") || ops.contains("-commands")) {
-                                println(DESCRIPTION_COMMANDS);
+                                println("\n" + R.DESCRIPTION_COMMANDS);
                                 done = true;
                             }
 
-                            if (!done) {        // print everything
-                                println(DESCRIPTION_FULL);
+                            if (!done) {
+                                usage_pr.run();
                             }
                         }
 

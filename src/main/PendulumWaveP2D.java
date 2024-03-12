@@ -126,9 +126,9 @@ public class PendulumWaveP2D extends BasePendulumWavePUi {
     public void setup() {
         super.setup();
 
-        if (isFullscreen()) {
-            surface.hideCursor();
-        }
+//        if (isFullscreen()) {
+//            surface.hideCursor();
+//        }
 
 //        surface.setAlwaysOnTop(true);
     }

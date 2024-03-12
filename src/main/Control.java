@@ -16,10 +16,10 @@ import java.util.function.Function;
 public enum Control {
 
     ESCAPE("Exit",
-            "Stop solving | Cancel pending moves | exit",
+            "",
             ui -> "",
-            "Esc",
-            "Escape key",
+            "Escape",
+            "",
             (ui, ev) -> {
 //                final int mod = ev.getModifiers();
                 if (ev.getKeyCode() == Control.ESCAPE_KEY_CODE_SUBSTITUTE) {
@@ -562,27 +562,31 @@ public enum Control {
                     .append("  [").append(c.continuousKeyEvent? "Continuous": "Discrete").append(']');
 
             // Descriptions
-            for (String line: c.description.split("\n")) {
-                if (line == null || line.isEmpty())
-                    continue;
+            if (Format.notEmpty(c.description)) {
+                for (String line: c.description.split("\n")) {
+                    if (Format.isEmpty(line))
+                        continue;
 
-                sj.append("\n\t").append(line);
+                    sj.append("\n\t").append(line);
+                }
             }
 
-            boolean firstKeyBind = true;
             // Key bindings Description
-            for (String line: c.keyBindingDescription.split("\n")) {
-                if (line == null || line.isEmpty())
-                    continue;
+            if (Format.notEmpty(c.keyBindingDescription)) {
+                boolean firstKeyBind = true;
+                for (String line: c.keyBindingDescription.split("\n")) {
+                    if (Format.isEmpty(line))
+                        continue;
 
-                if (firstKeyBind) {
-                    sj.append("\n\t<Keys> : ");
-                    firstKeyBind = false;
-                } else {
-                    sj.append("\n\t              ");
+                    if (firstKeyBind) {
+                        sj.append("\n\t<Keys> : ");
+                        firstKeyBind = false;
+                    } else {
+                        sj.append("\n\t         ");
+                    }
+
+                    sj.append(line);
                 }
-
-                sj.append(line);
             }
         }
 

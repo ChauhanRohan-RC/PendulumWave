@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.StringJoiner;
 
 public class R {
 
@@ -93,101 +94,130 @@ public class R {
     public static final String SHELL_ROTATION_Z = shellPath("roll");
 
 
+
+    /* Usage Description ........................................................ */
+
     public static final String DESCRIPTION_GENERAL =
-            """
-            =======================  Pendulum Wave  =======================
-            This is an interactive Pendulum Wave physics engine, with both 2D and 3D renderers and a real-time simulation environment
-            """;
+            "=======================  "+ TITLE +"  =======================\n" +
+            "This is an interactive Pendulum Wave physics engine, with both 2D and 3D renderers and a real-time simulation environment";
+
+    public static final String DESCRIPTION_GENERAL_WITH_HELP = DESCRIPTION_GENERAL + "\n\n\tType <help> for usage information.\n";
+
+    @Nullable
+    private static String sDesControls;
+
+    public static String getControlsDescription() {
+        if (sDesControls == null) {
+            sDesControls = "## CONTROLS ----------------------------------------------------\n\n" + Control.getControlsDescription();
+        }
+
+        return sDesControls;
+    }
 
     public static final String DESCRIPTION_COMMANDS =
             """
-                    -> help [-controls | -commands] : Print usage information
-                       Options
-                       1. -controls -> print controls information
-                       2. -commands -> print commands information
-                       
-                    -> count [-soft] <pendulum count> : Sets the number of pendulums in the wave.
-                       Alias: num, n
-                       Options
-                       1. -soft -> Do not reset pendulums state
-                       
-                    -> reset [-state | -env | -count | -cam | -win | -all] : Resets the given scope
-                       Scopes
-                       1. -state -> reset pendulums state
-                       2. -env -> reset simulation environment
-                       3. -count -> reset pendulum count
-                       4. -cam -> reset camera (pitch, yaw and roll)
-                       5. -win -> reset window size and position
-                       6. -all -> reset everything
-                                
-                    -> play : Start the simulation. Alias: start
-                    -> pause : Pause the simulation. Alias: stop
-                    -> toggle play : Toggle simulation play/pause state
-                    -> save : Save current frame to a png file
-                       Alias: snap, snapshot, saveframe
-                       
-                    -> speed [-x | -p] <value> : Sets the simulation speed, in multipliers or percentage
-                       Modes
-                       1. -x -> Multiples or times (Default)
-                       2. -p -> percentage, in range [0, 100]
-                       
-                    -> gravity [-reset] <value in ms-2> : Sets the acceleration due to gravity (in ms-2)
-                    -> drag [-reset] <value in g/s> : Sets the drag coefficient (in gram/s). positive value -> drag, negative -> push
-                    -> mass [-reset] <value in g> : Sets the mass of each pendulum (in grams). Must be > 0
-                    -> angle [-reset] <value in deg> : Sets the start angle of each pendulum (in degrees)
-                                
-                    -> wp [-reset] <value in secs> : Sets the wave period (in secs). Must be > 0
-                       Alias: period, waveperiod
-                       
-                    -> minosc [-reset] <value> : Sets the minimum oscillations in wave period. Must be > 0
-                       Alias: osc, mosc
-                                
-                    -> oscstep [-reset] <value> : Sets the oscillation step per pendulum. Must be > 0
-                       Alias: step, ostep
-                                
-                    -> bob-only : Toggle draw bobs-only mode
-                       Alias: bobs, toggle bobs, toggle bobs-only
-                       
-                    -> sound : Toggle sounds
-                    -> poly-rhythm : Toggle Poly Rhythm mode. If enabled, it allows playing multiple notes at once
-                                
-                    -> hud : Toggle HUD overlay
-                    -> keys : Toggle control key bindings
-                       Alias: toggle keys, controls, toggle controls
-                       
-                    -> win [-size | -pos] <x> <y> : Sets the window size or location on screen
-                       Options
-                       1. -size -> set window size.
-                       2. -pos -> set window location on screen
-                       Wildcards
-                       1. w : set to initial windowed size. To be used with -size option
-                       2. c : center window on screen. To be used with -pos option
-                                
-                    -> pitch [-by | -f] <+ | - | value_in_deg> : Sets the camera pitch (rotation about X-axis)
-                       Alias: rx, rotx, rotationx
-                       Wildcards: + or up, - or down
-                       Options
-                       1. -by -> change current pitch by the given value
-                       2. -f -> force without animations
-                       
-                    -> yaw [-by | -f] <+ | - | value_in_deg> : Sets the camera yaw (rotation about Y-axis)
-                       Alias: ry, roty, rotationy
-                       Wildcards: + or left, - or right
-                       Options
-                       1. -by -> change current yaw by the given value
-                       2. -f -> force without animations
-                                
-                    -> roll [-by | -f] <+ | - | value_in_deg> : Sets the camera roll (rotation about Z-axis)
-                       Alias: rz, rotz, rotationz
-                       Wildcards: + or left, - or right
-                       Options
-                       1. -by -> change current roll by the given value
-                       2. -f -> force without animations
-                    """;
+            ## COMMANDS ----------------------------------------------------
+            
+            -> help [-controls | -commands] : Print usage information
+               Options
+               1. -controls -> print controls information
+               2. -commands -> print commands information
+               
+            -> count [-soft] <pendulum count> : Sets the number of pendulums in the wave.
+               Alias: num, n
+               Options
+               1. -soft -> Do not reset pendulums state
+               
+            -> reset [-state | -env | -count | -cam | -win | -all] : Resets the given scope
+               Scopes
+               1. -state -> reset pendulums state
+               2. -env -> reset simulation environment
+               3. -count -> reset pendulum count
+               4. -cam -> reset camera (pitch, yaw and roll)
+               5. -win -> reset window size and position
+               6. -all -> reset everything
+                        
+            -> play : Start the simulation. Alias: start
+            -> pause : Pause the simulation. Alias: stop
+            -> toggle play : Toggle simulation play/pause state
+            -> save : Save current frame to a png file
+               Alias: snap, snapshot, saveframe
+               
+            -> speed [-x | -p] <value> : Sets the simulation speed, in multipliers or percentage
+               Modes
+               1. -x -> Multiples or times (Default)
+               2. -p -> percentage, in range [0, 100]
+               
+            -> gravity [-reset] <value in ms-2> : Sets the acceleration due to gravity (in ms-2)
+            -> drag [-reset] <value in g/s> : Sets the drag coefficient (in gram/s). positive value -> drag, negative -> push
+            -> mass [-reset] <value in g> : Sets the mass of each pendulum (in grams). Must be > 0
+            -> angle [-reset] <value in deg> : Sets the start angle of each pendulum (in degrees)
+                        
+            -> wp [-reset] <value in secs> : Sets the wave period (in secs). Must be > 0
+               Alias: period, waveperiod
+               
+            -> minosc [-reset] <value> : Sets the minimum oscillations in wave period. Must be > 0
+               Alias: osc, mosc
+                        
+            -> oscstep [-reset] <value> : Sets the oscillation step per pendulum. Must be > 0
+               Alias: step, ostep
+                        
+            -> bob-only : Toggle draw bobs-only mode
+               Alias: bobs, toggle bobs, toggle bobs-only
+               
+            -> sound : Toggle sounds
+            -> poly-rhythm : Toggle Poly Rhythm mode. If enabled, it allows playing multiple notes at once
+                        
+            -> hud : Toggle HUD overlay
+            -> keys : Toggle control key bindings
+               Alias: toggle keys, controls, toggle controls
+               
+            -> win [-size | -pos] <x> <y> : Sets the window size or location on screen
+               Options
+               1. -size -> set window size.
+               2. -pos -> set window location on screen
+               Wildcards
+               1. w : set to initial windowed size. To be used with -size option
+               2. c : center window on screen. To be used with -pos option
+                        
+            -> pitch [-by | -f] <+ | - | value_in_deg> : Sets the camera pitch (rotation about X-axis)
+               Alias: rx, rotx, rotationx
+               Wildcards: + or up, - or down
+               Options
+               1. -by -> change current pitch by the given value
+               2. -f -> force without animations
+               
+            -> yaw [-by | -f] <+ | - | value_in_deg> : Sets the camera yaw (rotation about Y-axis)
+               Alias: ry, roty, rotationy
+               Wildcards: + or left, - or right
+               Options
+               1. -by -> change current yaw by the given value
+               2. -f -> force without animations
+                        
+            -> roll [-by | -f] <+ | - | value_in_deg> : Sets the camera roll (rotation about Z-axis)
+               Alias: rz, rotz, rotationz
+               Wildcards: + or left, - or right
+               Options
+               1. -by -> change current roll by the given value
+               2. -f -> force without animations   \s""";
 
-    public static void main(String[] args) {
-        System.out.println(DESCRIPTION_COMMANDS);
+
+    public static String getFullDescription(boolean withGeneral, boolean withControls) {
+        final StringJoiner sj = new StringJoiner("\n\n\n");
+
+        if (withGeneral) {
+            sj.add(DESCRIPTION_GENERAL);
+        }
+
+        if (withControls) {
+            sj.add(getControlsDescription());
+        }
+
+        sj.add(DESCRIPTION_COMMANDS);
+
+        return sj.toString();
     }
+
 
     /* ...................................  Utility functions  ................................ */
 
@@ -220,7 +250,7 @@ public class R {
                     return p;
                 }
             }
-        } catch (Exception exc) {
+        } catch (Throwable ignored) {
         }
 
         return null;
@@ -229,16 +259,20 @@ public class R {
 
     // Readme
 
-    public static boolean createReadme(@NotNull String instructions) {
+    public static boolean createReadme(@NotNull String content) {
         try (PrintWriter w = new PrintWriter("readme.txt", StandardCharsets.UTF_8)) {
-            w.print(instructions);
+            w.print(content);
             w.flush();
             return true;
         } catch (Throwable exc) {
-            exc.printStackTrace();
+            System.out.println("Failed to create readme.txt: " + exc.getMessage());
         }
 
         return false;
+    }
+
+    public static boolean createFullDescriptionReadme(boolean withControls) {
+        return R.createReadme(getFullDescription(true, withControls));
     }
 
 

@@ -1,7 +1,11 @@
 =======================  Pendulum Wave  =======================
 This is an interactive Pendulum Wave physics engine, with both 2D and 3D renderers and a real-time simulation environment
 
+
 ## CONTROLS ----------------------------------------------------
+
+-> Escape : Exit  [Discrete]
+
 -> W : Window  [Discrete]
 	Sets the fullscreen mode to Expanded or Windowed.
 
@@ -80,6 +84,7 @@ This is an interactive Pendulum Wave physics engine, with both 2D and 3D rendere
 
 
 ## COMMANDS ----------------------------------------------------
+
 -> help [-controls | -commands] : Print usage information
    Options
    1. -controls -> print controls information
@@ -161,4 +166,4 @@ This is an interactive Pendulum Wave physics engine, with both 2D and 3D rendere
    Wildcards: + or left, - or right
    Options
    1. -by -> change current roll by the given value
-   2. -f -> force without animations
+   2. -f -> force without animations    

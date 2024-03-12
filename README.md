@@ -137,10 +137,11 @@ where
 ![Pendulum Wave 3D bobs-only top-view](gallery/pw_3d_4.png)
 
 ## Commands
-* `help [-controls | -commands]` : Print usage information
+* `help [-controls | -commands | -all]` : Print usage information
   * Options
-    * `-controls` : print controls information
-    * `-commands` : print commands information
+    * `-controls` : print controls usage
+    * `-commands` : print commands usage
+    * `-all` : print entire usage information
 
 #### Pendulum Commands
 * `mass [-reset] <value>` : Sets the mass of each pendulum (in grams). Must be > 0
